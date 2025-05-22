@@ -1,14 +1,14 @@
 package br.com.pointer.pointer_back.mapper;
 
 import org.springframework.stereotype.Component;
-import br.com.pointer.pointer_back.dto.PDIRequestDTO;
+import br.com.pointer.pointer_back.dto.pdiDTO;
 import br.com.pointer.pointer_back.dto.PDIResponseDTO;
 import br.com.pointer.pointer_back.model.PDI;
 
 @Component
 public class PDIMapper {
     //TODO: refactor DTO
-    public PDI toEntity(PDIRequestDTO dto) {
+    public PDI toEntity(pdiDTO dto) {
         if (dto == null) {
             return null;
         }
@@ -42,7 +42,7 @@ public class PDIMapper {
         return dto;
     }
 
-    public void updateEntityFromDTO(PDIRequestDTO dto, PDI pdi) {
+    public void updateEntityFromDTO(pdiDTO dto, PDI pdi) {
         if (dto == null || pdi == null) {
             return;
         }

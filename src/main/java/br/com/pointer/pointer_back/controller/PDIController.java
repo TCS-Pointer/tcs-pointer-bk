@@ -1,7 +1,6 @@
 package br.com.pointer.pointer_back.controller;
 
 import br.com.pointer.pointer_back.dto.pdiDTO;
-import br.com.pointer.pointer_back.dto.PDIResponseDTO;
 import br.com.pointer.pointer_back.service.PDIService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,15 +23,15 @@ public class PDIController {
     //     return ResponseEntity.ok(pdiService.getAllPDIs());
     // }
 
-    // @GetMapping("/buscar-pdi/{id}")
-    // @PreAuthorize("hasRole('usuario') or hasRole('admin') or hasRole('gestor')")
-    // public ResponseEntity<PDIResponseDTO> buscarPorId(@PathVariable Long id) {
-    //     return ResponseEntity.ok(pdiService.getPDIById(id));
-    // }
+    @GetMapping("/buscar-pdi/{id}")
+    @PreAuthorize("hasRole('usuario') or hasRole('admin') or hasRole('gestor')")
+    public ResponseEntity<pdiDTO> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(pdiService.buscarPorId(id));
+    }
 
     @PostMapping("/criar-pdi")
     @PreAuthorize("hasRole('admin') or hasRole('gestor')")
-    public ResponseEntity<PDIResponseDTO> criar(@RequestBody pdiDTO pdiDTO) {
+    public ResponseEntity<pdiDTO> criar(@RequestBody pdiDTO pdiDTO) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pdiService.criar(pdiDTO));
     }
 

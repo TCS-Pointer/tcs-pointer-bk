@@ -2,7 +2,6 @@ package br.com.pointer.pointer_back.mapper;
 
 import org.springframework.stereotype.Component;
 import br.com.pointer.pointer_back.dto.pdiDTO;
-import br.com.pointer.pointer_back.dto.PDIResponseDTO;
 import br.com.pointer.pointer_back.model.PDI;
 
 @Component
@@ -22,24 +21,6 @@ public class PDIMapper {
         pdi.setStatus(dto.getStatus());
         // dataCriacao é gerenciado pelo @PrePersist
         return pdi;
-    }
-
-    public PDIResponseDTO toResponseDTO(PDI pdi) {
-        if (pdi == null) {
-            return null;
-        }
-
-        PDIResponseDTO dto = new PDIResponseDTO();
-        dto.setId(pdi.getId());
-        dto.setTitulo(pdi.getTitulo());
-        dto.setDescricao(pdi.getDescricao());
-        dto.setDataInicio(pdi.getDtInicio());
-        dto.setDataFim(pdi.getDtFim());
-        dto.setIdUsuario(pdi.getIdUsuario());
-        dto.setStatus(pdi.getStatus());
-        dto.setDataCriacao(pdi.getDataCriacao() != null ? pdi.getDataCriacao().toLocalDate() : null);
-
-        return dto;
     }
 
     public void updateEntityFromDTO(pdiDTO dto, PDI pdi) {

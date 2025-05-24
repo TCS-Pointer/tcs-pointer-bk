@@ -1,5 +1,6 @@
 package br.com.pointer.pointer_back.exception;
 
+import br.com.pointer.pointer_back.dto.ApiResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,14 +20,12 @@ class GlobalExceptionHandlerTest {
         UsuarioJaExisteException ex = new UsuarioJaExisteException("Usuário já existe");
 
         // Act
-        ResponseEntity<Map<String, Object>> response = handler.handleUsuarioJaExisteException(ex);
+        ResponseEntity<ApiResponse<Void>> response = handler.handleUsuarioJaExisteException(ex);
 
         // Assert
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
-        assertEquals(409, response.getBody().get("status"));
-        assertEquals("Usuário já existe", response.getBody().get("message"));
-        assertEquals("Conflito", response.getBody().get("error"));
-        assertNotNull(response.getBody().get("timestamp"));
+        assertEquals(409, response.getBody().getStatus());
+        assertEquals("Usuário já existe", response.getBody().getMessage());
     }
 
     @Test
@@ -35,14 +34,12 @@ class GlobalExceptionHandlerTest {
         EmailInvalidoException ex = new EmailInvalidoException("Email inválido");
 
         // Act
-        ResponseEntity<Map<String, Object>> response = handler.handleEmailInvalidoException(ex);
+        ResponseEntity<ApiResponse<Void>> response = handler.handleEmailInvalidoException(ex);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals(400, response.getBody().get("status"));
-        assertEquals("Email inválido", response.getBody().get("message"));
-        assertEquals("Email Inválido", response.getBody().get("error"));
-        assertNotNull(response.getBody().get("timestamp"));
+        assertEquals(400, response.getBody().getStatus());
+        assertEquals("Email inválido", response.getBody().getMessage());
     }
 
     @Test
@@ -51,14 +48,12 @@ class GlobalExceptionHandlerTest {
         SenhaInvalidaException ex = new SenhaInvalidaException("Senha inválida");
 
         // Act
-        ResponseEntity<Map<String, Object>> response = handler.handleSenhaInvalidaException(ex);
+        ResponseEntity<ApiResponse<Void>> response = handler.handleSenhaInvalidaException(ex);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals(400, response.getBody().get("status"));
-        assertEquals("Senha inválida", response.getBody().get("message"));
-        assertEquals("Senha Inválida", response.getBody().get("error"));
-        assertNotNull(response.getBody().get("timestamp"));
+        assertEquals(400, response.getBody().getStatus());
+        assertEquals("Senha inválida", response.getBody().getMessage());
     }
 
     @Test
@@ -67,29 +62,25 @@ class GlobalExceptionHandlerTest {
         KeycloakException ex = new KeycloakException("Erro no Keycloak");
 
         // Act
-        ResponseEntity<Map<String, Object>> response = handler.handleKeycloakException(ex);
+        ResponseEntity<ApiResponse<Void>> response = handler.handleKeycloakException(ex);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals(500, response.getBody().get("status"));
-        assertEquals("Erro no Keycloak", response.getBody().get("message"));
-        assertEquals("Erro no Keycloak", response.getBody().get("error"));
-        assertNotNull(response.getBody().get("timestamp"));
+        assertEquals(500, response.getBody().getStatus());
+        assertEquals("Erro no Keycloak", response.getBody().getMessage());
     }
 
     @Test
-    void handleGlobalException_DeveRetornarResponseEntityComStatus500() {
+    void handleException_DeveRetornarResponseEntityComStatus500() {
         // Arrange
         Exception ex = new RuntimeException("Erro interno");
 
         // Act
-        ResponseEntity<Map<String, Object>> response = handler.handleGlobalException(ex);
+        ResponseEntity<ApiResponse<Void>> response = handler.handleException(ex);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals(500, response.getBody().get("status"));
-        assertEquals("Erro interno do servidor", response.getBody().get("message"));
-        assertEquals("Erro Interno", response.getBody().get("error"));
-        assertNotNull(response.getBody().get("timestamp"));
+        assertEquals(400, response.getBody().getStatus());
+        assertEquals("Erro interno do servidor: Erro interno", response.getBody().getMessage());
     }
-} 
+}

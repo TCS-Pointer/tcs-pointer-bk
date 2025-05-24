@@ -10,10 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -21,43 +18,31 @@ public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(UsuarioJaExisteException.class)
-    public ResponseEntity<Map<String, Object>> handleUsuarioJaExisteException(UsuarioJaExisteException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("message", ex.getMessage());
-        body.put("status", HttpStatus.CONFLICT.value());
-        body.put("error", "Conflito");
-        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    public ResponseEntity<ApiResponse<Void>> handleUsuarioJaExisteException(UsuarioJaExisteException ex) {
+        logger.error("Usuário já existe: ", ex);
+        ApiResponse<Void> response = new ApiResponse<Void>().conflict(ex.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
     @ExceptionHandler(EmailInvalidoException.class)
-    public ResponseEntity<Map<String, Object>> handleEmailInvalidoException(EmailInvalidoException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("message", ex.getMessage());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("error", "Email Inválido");
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<ApiResponse<Void>> handleEmailInvalidoException(EmailInvalidoException ex) {
+        logger.error("Email inválido: ", ex);
+        ApiResponse<Void> response = new ApiResponse<Void>().badRequest(ex.getMessage());
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(SenhaInvalidaException.class)
-    public ResponseEntity<Map<String, Object>> handleSenhaInvalidaException(SenhaInvalidaException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("message", ex.getMessage());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("error", "Senha Inválida");
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<ApiResponse<Void>> handleSenhaInvalidaException(SenhaInvalidaException ex) {
+        logger.error("Senha inválida: ", ex);
+        ApiResponse<Void> response = new ApiResponse<Void>().badRequest(ex.getMessage());
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(KeycloakException.class)
-    public ResponseEntity<Map<String, Object>> handleKeycloakException(KeycloakException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("message", ex.getMessage());
-        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        body.put("error", "Erro no Keycloak");
-        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<ApiResponse<Void>> handleKeycloakException(KeycloakException ex) {
+        logger.error("Erro no Keycloak: ", ex);
+        ApiResponse<Void> response = new ApiResponse<Void>().badRequest(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 
     @ExceptionHandler(Exception.class)

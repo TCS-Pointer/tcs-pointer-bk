@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "pdi") 
+@Table(name = "pdi")
 public class PDI {
 
     @Id
@@ -21,11 +21,11 @@ public class PDI {
     @Column(nullable = false)
     private String descricao;
 
-    @Column(nullable = false)
-    private String destinatario;
+    @Column(name = "destinatario")
+    private Long destinatario;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(20)")
     private StatusPDI status;
 
     @Column(name = "dt_inicio", nullable = false)
@@ -34,7 +34,7 @@ public class PDI {
     @Column(name = "dt_fim", nullable = false)
     private LocalDate dtFim;
 
-    @Column(name = "id_usuario", nullable = false) 
+    @Column(name = "id_usuario", nullable = false)
     private Long idUsuario;
 
     @Column(name = "dt_criacao", nullable = false)
@@ -43,5 +43,8 @@ public class PDI {
     @PrePersist
     protected void onCreate() {
         dataCriacao = LocalDateTime.now();
+        if (status == null) {
+            status = StatusPDI.PENDENTE;
+        }
     }
-} 
+}

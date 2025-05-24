@@ -3,6 +3,7 @@ package br.com.pointer.pointer_back.dto;
 import br.com.pointer.pointer_back.enums.StatusPDI;
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class pdiDTO {
@@ -14,4 +15,5 @@ public class pdiDTO {
     private Long idUsuario;
     private Long destinatario;
     private StatusPDI status;
+    private List<MarcoPDIDTO> marcos;
 }

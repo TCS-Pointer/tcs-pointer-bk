@@ -2,10 +2,12 @@ package br.com.pointer.pointer_back.mapper;
 
 import org.springframework.stereotype.Component;
 import br.com.pointer.pointer_back.dto.pdiDTO;
+import br.com.pointer.pointer_back.dto.MarcoPDIDTO;
 import br.com.pointer.pointer_back.model.PDI;
 import br.com.pointer.pointer_back.enums.StatusPDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.stream.Collectors;
 
 @Component
 public class PDIMapper {
@@ -49,6 +51,22 @@ public class PDIMapper {
             dto.setIdUsuario(pdi.getIdUsuario());
             dto.setDestinatario(pdi.getDestinatario());
             dto.setStatus(pdi.getStatus());
+
+            // Convertendo os marcos do PDI
+            if (pdi.getMarcos() != null) {
+                dto.setMarcos(pdi.getMarcos().stream()
+                        .map(marco -> {
+                            MarcoPDIDTO marcoDTO = new MarcoPDIDTO();
+                            marcoDTO.setId(marco.getId());
+                            marcoDTO.setTitulo(marco.getTitulo());
+                            marcoDTO.setDescricao(marco.getDescricao());
+                            marcoDTO.setDtFinal(marco.getDtFinal());
+                            marcoDTO.setStatus(marco.getStatus());
+                            marcoDTO.setPdiId(pdi.getId());
+                            return marcoDTO;
+                        })
+                        .collect(Collectors.toList()));
+            }
         } catch (Exception e) {
             logger.error("Erro ao converter entidade para DTO: ", e);
             throw new RuntimeException("Erro ao converter entidade para DTO: " + e.getMessage(), e);

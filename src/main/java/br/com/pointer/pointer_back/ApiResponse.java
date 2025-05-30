@@ -1,4 +1,4 @@
-package br.com.pointer.pointer_back.dto;
+package br.com.pointer.pointer_back;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;

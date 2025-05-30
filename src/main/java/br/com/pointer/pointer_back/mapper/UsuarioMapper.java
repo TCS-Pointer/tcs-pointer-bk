@@ -8,24 +8,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component
-public class UsuarioMapper {
+public class UsuarioMapper extends GenericMapperImpl<UsuarioDTO, Usuario, UsuarioResponseDTO> {
     private static final Logger logger = LoggerFactory.getLogger(UsuarioMapper.class);
 
+    @Override
     public Usuario toEntity(UsuarioDTO dto) {
         try {
             if (dto == null) {
                 logger.error("DTO é nulo");
                 return null;
             }
-
             Usuario usuario = new Usuario();
             usuario.setNome(dto.getNome());
-            usuario.setEmail(dto.getEmail());
-            usuario.setSenha(dto.getSenha());
-            usuario.setStatus(dto.getStatus());
-            usuario.setCargo(dto.getCargo());
             usuario.setSetor(dto.getSetor());
+            usuario.setCargo(dto.getCargo());
             usuario.setTipoUsuario(dto.getTipoUsuario());
+            usuario.setKeycloakId(dto.getKeycloakId());
             return usuario;
         } catch (Exception e) {
             logger.error("Erro ao converter DTO para entidade: ", e);
@@ -33,22 +31,21 @@ public class UsuarioMapper {
         }
     }
 
+    @Override
     public UsuarioResponseDTO toResponseDTO(Usuario usuario) {
         try {
             if (usuario == null) {
                 logger.error("Usuário é nulo");
                 return null;
             }
-
             UsuarioResponseDTO dto = new UsuarioResponseDTO();
             dto.setId(usuario.getId());
             dto.setNome(usuario.getNome());
-            dto.setEmail(usuario.getEmail());
-            dto.setStatus(usuario.getStatus());
-            dto.setCargo(usuario.getCargo());
             dto.setSetor(usuario.getSetor());
+            dto.setCargo(usuario.getCargo());
             dto.setTipoUsuario(usuario.getTipoUsuario());
             dto.setDataCriacao(usuario.getDataCriacao());
+            dto.setKeycloakId(usuario.getKeycloakId());
             return dto;
         } catch (Exception e) {
             logger.error("Erro ao converter entidade para DTO: ", e);
@@ -56,22 +53,18 @@ public class UsuarioMapper {
         }
     }
 
+    @Override
     public void updateEntityFromDTO(UsuarioDTO dto, Usuario usuario) {
         try {
             if (dto == null || usuario == null) {
                 logger.error("DTO ou Usuário é nulo");
                 return;
             }
-
             usuario.setNome(dto.getNome());
-            usuario.setEmail(dto.getEmail());
-            if (dto.getSenha() != null && !dto.getSenha().isEmpty()) {
-                usuario.setSenha(dto.getSenha());
-            }
-            usuario.setStatus(dto.getStatus());
-            usuario.setCargo(dto.getCargo());
             usuario.setSetor(dto.getSetor());
+            usuario.setCargo(dto.getCargo());
             usuario.setTipoUsuario(dto.getTipoUsuario());
+            usuario.setKeycloakId(dto.getKeycloakId());
         } catch (Exception e) {
             logger.error("Erro ao atualizar entidade com DTO: ", e);
             throw new RuntimeException("Erro ao atualizar entidade com DTO: " + e.getMessage());

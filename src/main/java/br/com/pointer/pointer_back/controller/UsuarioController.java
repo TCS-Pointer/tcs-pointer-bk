@@ -1,115 +1,68 @@
 package br.com.pointer.pointer_back.controller;
 
+import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.dto.UsuarioDTO;
 import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
-import br.com.pointer.pointer_back.dto.EmailCode;
-import br.com.pointer.pointer_back.dto.EmailDTO;
-import br.com.pointer.pointer_back.dto.UpdatePasswordDTO;
-import br.com.pointer.pointer_back.service.EmailService;
+import br.com.pointer.pointer_back.dto.UsuarioRequestDTO;
 import br.com.pointer.pointer_back.service.UsuarioService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
 
 @RestController
 @RequestMapping("/usuarios")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
-    private final EmailService emailService;
 
-    public UsuarioController(UsuarioService usuarioService, EmailService emailService) {
+    public UsuarioController(UsuarioService usuarioService) {
         this.usuarioService = usuarioService;
-        this.emailService = emailService;
     }
 
-    @PostMapping
+    @PostMapping("/completo")
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<UsuarioResponseDTO> criarUsuario(@RequestBody UsuarioDTO usuarioDTO) {
-        UsuarioResponseDTO novoUsuario = usuarioService.criarUsuario(usuarioDTO);
-        return ResponseEntity.ok(novoUsuario);
+    public ApiResponse<UsuarioService.CriarUsuarioResponse> criarUsuarioCompleto(@RequestBody UsuarioRequestDTO request) {
+        return new ApiResponse<UsuarioService.CriarUsuarioResponse>()
+                .ok(usuarioService.criarUsuarioCompleto(request).getBody(), "Usuário criado com sucesso");
     }
 
     @GetMapping
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<Page<UsuarioResponseDTO>> listarUsuarios(
+    public ApiResponse<Page<UsuarioResponseDTO>> listarUsuarios(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String setor,
-            @RequestParam(required = false) String perfil,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String perfil) {
         PageRequest pageRequest = PageRequest.of(page, size);
-        Page<UsuarioResponseDTO> usuarios = usuarioService.listarUsuarios(pageRequest, setor, perfil, status);
-        return ResponseEntity.ok(usuarios);
-    }
-
-    @PostMapping("/alterar-status")
-    @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<Void> alterarStatus(@RequestBody EmailDTO emailDTO) {
-        usuarioService.alternarStatusUsuarioPorEmail(emailDTO);
-        return ResponseEntity.ok().build();
+        Page<UsuarioResponseDTO> usuarios = usuarioService.listarUsuarios(pageRequest, setor, perfil);
+        return new ApiResponse<Page<UsuarioResponseDTO>>()
+                .ok(usuarios, "Usuários listados com sucesso");
     }
 
     @PutMapping("/atualizar-usuario/{id}")
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<UsuarioResponseDTO> atualizarUsuario(@PathVariable String id, @RequestBody UsuarioDTO usuarioDTO) {
-        UsuarioResponseDTO usuarioAtualizado = usuarioService.atualizarUsuarioComSincronizacaoKeycloak(usuarioDTO, id);
-        return ResponseEntity.ok(usuarioAtualizado);
+    public ApiResponse<UsuarioResponseDTO> atualizarUsuario(
+            @PathVariable String id,
+            @RequestBody UsuarioDTO usuarioDTO) {
+        UsuarioResponseDTO usuarioAtualizado = usuarioService.atualizarUsuario(usuarioDTO, id);
+        return new ApiResponse<UsuarioResponseDTO>()
+                .ok(usuarioAtualizado, "Usuário atualizado com sucesso");
     }
 
-    @PutMapping("/atualizar-senha")
+    @GetMapping("/{id}")
     @PreAuthorize("hasRole('colaborador') or hasRole('admin') or hasRole('gestor')")
-    public ResponseEntity<Void> atualizarSenha(@RequestBody UpdatePasswordDTO updatePasswordDTO) {
-        usuarioService.atualizarSenhaUsuario(updatePasswordDTO);
-        return ResponseEntity.ok().build();
+    public ApiResponse<UsuarioResponseDTO> buscarUsuario(@PathVariable Long id) {
+        UsuarioResponseDTO usuario = usuarioService.buscarUsuarioPorId(id);
+        return new ApiResponse<UsuarioResponseDTO>()
+                .ok(usuario, "Usuário encontrado com sucesso");
     }
 
-    @PostMapping("/esqueceu-senha")
-    public ResponseEntity<Void> esqueceuSenha(@RequestBody EmailDTO emailDTO) {
-        boolean exists = usuarioService.existsByEmail(emailDTO.getEmail());
-        if (exists) {
-            String nome = usuarioService.findByEmail(emailDTO.getEmail()).getNome();
-            emailService.sendVerificationCodeEmail(emailDTO.getEmail(), nome);
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.status(404).build();
-        }
-    }
-
-    @PostMapping("/verificar-codigo")
-    public ResponseEntity<Void> verificarCodigo(@RequestBody EmailCode emailCode) {
-        boolean isValid = emailService.verifyCode(emailCode.getEmail(), emailCode.getCodigo());
-        if (isValid) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.status(400).build();
-        }
-    }
-
-    @PostMapping("/redefinir-senha")
-    public ResponseEntity<Void> redefinirSenha(@RequestBody UpdatePasswordDTO updatePasswordDTO) {
-        usuarioService.atualizarSenhaUsuario(updatePasswordDTO);
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/verificar-email/{email}")
-    @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<Void> verificarEmail(@PathVariable String email) {
-        boolean exists = usuarioService.existsByEmail(email);
-        if (!exists) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.status(404).build();
-        }
-    }
-
-    @GetMapping("/{email}")
+    @GetMapping("/keycloak/{keycloakId}")
     @PreAuthorize("hasRole('colaborador') or hasRole('admin') or hasRole('gestor')")
-    public ResponseEntity<UsuarioResponseDTO> buscarUsuario(@PathVariable String email) {
-        UsuarioResponseDTO usuario = usuarioService.buscarUsuario(email);
-        return ResponseEntity.ok(usuario);
+    public ApiResponse<UsuarioResponseDTO> buscarUsuarioPorKeycloakId(@PathVariable String keycloakId) {
+        UsuarioResponseDTO usuario = usuarioService.buscarUsuarioPorKeycloakId(keycloakId);
+        return new ApiResponse<UsuarioResponseDTO>()
+                .ok(usuario, "Usuário encontrado com sucesso");
     }
 }

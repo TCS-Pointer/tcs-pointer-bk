@@ -1,8 +1,8 @@
 package br.com.pointer.pointer_back.enums;
 
 public enum StatusMarcoPDI {
-    AGUARDANDO,
-    FEITO;
+    PENDENTE,
+    CONCLUIDO;
 
     @Override
     public String toString() {

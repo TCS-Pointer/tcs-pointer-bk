@@ -34,7 +34,7 @@ public class MarcoPDI {
     @PrePersist
     protected void onCreate() {
         if (status == null) {
-            status = StatusMarcoPDI.AGUARDANDO;
+            status = StatusMarcoPDI.PENDENTE;
         }
     }
 }

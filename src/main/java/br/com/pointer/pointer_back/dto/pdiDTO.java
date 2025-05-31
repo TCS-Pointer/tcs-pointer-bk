@@ -13,7 +13,7 @@ public class pdiDTO {
     private LocalDate dataInicio;
     private LocalDate dataFim;
     private Long idUsuario;
-    private Long destinatario;
+    private Long idDestinatario;
     private StatusPDI status;
     private List<MarcoPDIDTO> marcos;
 }

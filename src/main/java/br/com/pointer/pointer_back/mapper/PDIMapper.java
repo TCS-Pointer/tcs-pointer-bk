@@ -27,7 +27,8 @@ public class PDIMapper {
             pdi.setDtInicio(dto.getDataInicio());
             pdi.setDtFim(dto.getDataFim());
             pdi.setIdUsuario(dto.getIdUsuario());
-            pdi.setDestinatario(dto.getDestinatario());
+            pdi.setIdDestinatario(dto.getIdDestinatario());
+            pdi.setStatus(dto.getStatus());
 
             return pdi;
         } catch (Exception e) {
@@ -49,7 +50,7 @@ public class PDIMapper {
             dto.setDataInicio(pdi.getDtInicio());
             dto.setDataFim(pdi.getDtFim());
             dto.setIdUsuario(pdi.getIdUsuario());
-            dto.setDestinatario(pdi.getDestinatario());
+            dto.setIdDestinatario(pdi.getIdDestinatario());
             dto.setStatus(pdi.getStatus());
 
             // Convertendo os marcos do PDI
@@ -90,8 +91,8 @@ public class PDIMapper {
                 pdi.setDtFim(dto.getDataFim());
             if (dto.getIdUsuario() != null)
                 pdi.setIdUsuario(dto.getIdUsuario());
-            if (dto.getDestinatario() != null)
-                pdi.setDestinatario(dto.getDestinatario());
+            if (dto.getIdDestinatario() != null)
+                pdi.setIdDestinatario(dto.getIdDestinatario());
             if (dto.getStatus() != null) {
                 logger.info("Atualizando status para: {}", dto.getStatus());
                 pdi.setStatus(dto.getStatus());

@@ -22,8 +22,8 @@ public class PDI {
     @Column(nullable = false)
     private String descricao;
 
-    @Column(name = "destinatario")
-    private Long destinatario;
+    @Column(name = "idDestinatario")
+    private Long idDestinatario;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "varchar(20)")
@@ -48,7 +48,7 @@ public class PDI {
     protected void onCreate() {
         dataCriacao = LocalDateTime.now();
         if (status == null) {
-            status = StatusPDI.PENDENTE;
+            status = StatusPDI.EM_ANDAMENTO;
         }
     }
 }

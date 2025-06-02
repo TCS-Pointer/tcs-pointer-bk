@@ -29,7 +29,7 @@ public class MarcoPDIMapper {
             marcoPDI.setTitulo(dto.getTitulo());
             marcoPDI.setDescricao(dto.getDescricao());
             marcoPDI.setDtFinal(dto.getDtFinal());
-            marcoPDI.setStatus(dto.getStatus() != null ? dto.getStatus() : StatusMarcoPDI.AGUARDANDO);
+            marcoPDI.setStatus(dto.getStatus() != null ? dto.getStatus() : StatusMarcoPDI.PENDENTE);
             marcoPDI.setPdi(pdi);
 
             logger.debug("MarcoPDI convertido para entidade: {}", marcoPDI);

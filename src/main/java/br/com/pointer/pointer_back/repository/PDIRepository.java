@@ -8,4 +8,7 @@ import java.util.List;
 
 @Repository
 public interface PDIRepository extends JpaRepository<PDI, Long> {
-} 
+    List<PDI> findByIdUsuario(Long idUsuario);
+
+    List<PDI> findByIdDestinatario(Long idDestinatario);
+}

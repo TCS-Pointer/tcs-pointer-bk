@@ -16,8 +16,9 @@ import java.util.Optional;
 public interface UsuarioRepository extends JpaRepository<Usuario, Long>, JpaSpecificationExecutor<Usuario> {
 
     Optional<Usuario> findByKeycloakId(String keycloakId);
-
+    Optional<Usuario> findByEmail(String email);
     boolean existsByKeycloakId(String keycloakId);
+    boolean existsByEmail(String email);
 
     @Query("SELECT u FROM Usuario u WHERE " +
            "(:setor IS NULL OR u.setor = :setor) AND " +

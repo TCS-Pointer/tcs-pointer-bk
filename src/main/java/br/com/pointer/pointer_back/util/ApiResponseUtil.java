@@ -1,15 +1,16 @@
 package br.com.pointer.pointer_back.util;
 
-import br.com.pointer.pointer_back.dto.ApiResponse;
-import br.com.pointer.pointer_back.dto.PagedListResponse;
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Type;
-import java.util.List;
-import java.util.stream.Collectors;
+import br.com.pointer.pointer_back.ApiResponse;
+import br.com.pointer.pointer_back.dto.PagedListResponse;
 
 @Component
 public class ApiResponseUtil {
@@ -72,7 +73,8 @@ public class ApiResponseUtil {
     }
 
     public <S, D> ApiResponse<D> mapApiResponse(ApiResponse<S> source, Class<D> resultClass) {
-        Type apiResponseType = new TypeToken<ApiResponse<D>>() {}.getType();
+        Type apiResponseType = new TypeToken<ApiResponse<D>>() {
+        }.getType();
         ApiResponse<D> mapped = modelMapper.map(source, apiResponseType);
 
         if (source.getContent() != null) {
@@ -84,7 +86,8 @@ public class ApiResponseUtil {
     }
 
     public <S, D> ApiResponse<List<D>> mapApiResponseList(ApiResponse<List<S>> source, Class<D> resultClass) {
-        Type apiResponseType = new TypeToken<ApiResponse<List<D>>>() {}.getType();
+        Type apiResponseType = new TypeToken<ApiResponse<List<D>>>() {
+        }.getType();
         ApiResponse<List<D>> mapped = modelMapper.map(source, apiResponseType);
 
         if (source.getContent() != null) {
@@ -98,8 +101,10 @@ public class ApiResponseUtil {
         return mapped;
     }
 
-    public <R, T> ApiResponse<PagedListResponse<T>> mapApiResponsePagedList(ApiResponse<PagedListResponse<R>> source, Class<T> resultClass) {
-        Type apiResponseType = new TypeToken<ApiResponse<PagedListResponse<T>>>() {}.getType();
+    public <R, T> ApiResponse<PagedListResponse<T>> mapApiResponsePagedList(ApiResponse<PagedListResponse<R>> source,
+            Class<T> resultClass) {
+        Type apiResponseType = new TypeToken<ApiResponse<PagedListResponse<T>>>() {
+        }.getType();
         ApiResponse<PagedListResponse<T>> mapped = modelMapper.map(source, apiResponseType);
 
         if (source.getContent() != null) {
@@ -129,4 +134,4 @@ public class ApiResponseUtil {
 
         return mapped;
     }
-} 
+}

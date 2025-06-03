@@ -15,6 +15,9 @@ public class Usuario {
     @Column(nullable = false)
     private String nome;
 
+    @Column(nullable = false, unique = true)
+    private String email;
+
     @Column(nullable = false)
     private String setor;
 
@@ -29,6 +32,10 @@ public class Usuario {
 
     @Column(name = "keycloak_id", nullable = false, unique = true)
     private String keycloakId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatusUsuario status = StatusUsuario.ATIVO;
 
     @PrePersist
     protected void onCreate() {

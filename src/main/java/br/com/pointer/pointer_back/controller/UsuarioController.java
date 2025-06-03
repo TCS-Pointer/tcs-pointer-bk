@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.com.pointer.pointer_back.dto.ApiResponse;
+import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.dto.EmailDTO;
 import br.com.pointer.pointer_back.dto.UpdatePasswordDTO;
 import br.com.pointer.pointer_back.dto.UsuarioDTO;
@@ -72,8 +72,8 @@ public class UsuarioController {
     @PostMapping("/verificar-codigo")
     public ApiResponse<Boolean> verificarCodigo(@RequestBody EmailDTO emailDTO) {
         boolean isValid = usuarioService.existsByEmail(emailDTO.getEmail());
-        return apiResponseUtil.map(isValid, Boolean.class, 
-            isValid ? "Código válido" : "Código inválido");
+        return apiResponseUtil.map(isValid, Boolean.class,
+                isValid ? "Código válido" : "Código inválido");
     }
 
     @PostMapping("/redefinir-senha")
@@ -84,8 +84,8 @@ public class UsuarioController {
     @GetMapping("/verificar-email/{email}")
     public ApiResponse<Boolean> verificarEmail(@PathVariable String email) {
         boolean exists = usuarioService.existsByEmail(email);
-        return apiResponseUtil.map(!exists, Boolean.class, 
-            exists ? "Email já cadastrado" : "Email disponível");
+        return apiResponseUtil.map(!exists, Boolean.class,
+                exists ? "Email já cadastrado" : "Email disponível");
     }
 
     @GetMapping("/{email}")

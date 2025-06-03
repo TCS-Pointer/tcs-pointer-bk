@@ -1,16 +1,21 @@
 package br.com.pointer.pointer_back.service;
 
-import br.com.pointer.pointer_back.dto.UsuarioDTO;
-import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
-import br.com.pointer.pointer_back.dto.EmailDTO;
-import br.com.pointer.pointer_back.dto.UpdatePasswordDTO;
-import br.com.pointer.pointer_back.dto.ApiResponse;
-import br.com.pointer.pointer_back.exception.UsuarioNaoEncontradoException;
-import br.com.pointer.pointer_back.model.StatusUsuario;
-import br.com.pointer.pointer_back.model.Usuario;
-import br.com.pointer.pointer_back.repository.UsuarioRepository;
-import br.com.pointer.pointer_back.util.ApiResponseUtil;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
@@ -18,22 +23,20 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.RealmResource;
-
-import java.util.List;
-import java.util.Set;
-import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.HashMap;
-import java.util.Collections;
-import java.util.Map;
+import br.com.pointer.pointer_back.ApiResponse;
+import br.com.pointer.pointer_back.dto.EmailDTO;
+import br.com.pointer.pointer_back.dto.KeycloakResponseDTO;
+import br.com.pointer.pointer_back.dto.UpdatePasswordDTO;
+import br.com.pointer.pointer_back.dto.UsuarioDTO;
+import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
+import br.com.pointer.pointer_back.exception.KeycloakException;
+import br.com.pointer.pointer_back.exception.SetorCargoInvalidoException;
+import br.com.pointer.pointer_back.exception.UsuarioNaoEncontradoException;
+import br.com.pointer.pointer_back.model.StatusUsuario;
+import br.com.pointer.pointer_back.model.Usuario;
+import br.com.pointer.pointer_back.repository.UsuarioRepository;
+import br.com.pointer.pointer_back.util.ApiResponseUtil;
 
 @Service
 public class UsuarioService {
@@ -47,6 +50,7 @@ public class UsuarioService {
     private final Keycloak keycloak;
     private final String realm;
     private final ApiResponseUtil apiResponseUtil;
+    private final SetorCargoService setorCargoService;
 
     public UsuarioService(
             UsuarioRepository usuarioRepository,
@@ -55,6 +59,7 @@ public class UsuarioService {
             EmailService emailService,
             ApiResponseUtil apiResponseUtil,
             Keycloak keycloak,
+            SetorCargoService setorCargoService,
             @Value("${keycloak.realm}") String realm) {
         this.usuarioRepository = usuarioRepository;
         this.keycloakAdminService = keycloakAdminService;
@@ -62,6 +67,7 @@ public class UsuarioService {
         this.emailService = emailService;
         this.apiResponseUtil = apiResponseUtil;
         this.keycloak = keycloak;
+        this.setorCargoService = setorCargoService;
         this.realm = realm;
     }
 
@@ -72,24 +78,43 @@ public class UsuarioService {
                 return apiResponseUtil.error("Já existe um usuário com este email", 400);
             }
 
+            // Validar setor e cargo
+            setorCargoService.validarSetorECargo(dto.getSetor(), dto.getCargo());
+
             String senhaPura = dto.getSenha();
             if (senhaPura == null) {
                 senhaPura = gerarSenhaAleatoria();
                 enviarSenhaPorEmail(dto.getEmail(), senhaPura, dto.getNome());
             }
 
-            Usuario usuario = modelMapper.map(dto, Usuario.class);
-            usuario.setSenha(passwordEncoder.encode(senhaPura));
-                
-            usuario = usuarioRepository.save(usuario);
+            try {
+                // Primeiro criamos no Keycloak
+                KeycloakResponseDTO keycloakResponse = keycloakAdminService.createUserAndReturnId(
+                        dto.getNome(), dto.getEmail(), senhaPura);
 
-            String userId = keycloakAdminService.createUserAndReturnId(
-                    usuario.getNome(), usuario.getEmail(), senhaPura);
+                if (!keycloakResponse.isSuccess()) {
+                    return apiResponseUtil.error(keycloakResponse.getErrorMessage(), keycloakResponse.getStatusCode());
+                }
 
-            keycloakAdminService.setUserPassword(userId, senhaPura);
-            keycloakAdminService.assignRolesToUser(userId, obterRolesPorTipo(dto.getTipoUsuario()));
+                String userId = (String) keycloakResponse.getData();
+                keycloakAdminService.setUserPassword(userId, senhaPura);
+                keycloakAdminService.assignRolesToUser(userId, obterRolesPorTipo(dto.getTipoUsuario()));
 
-            return apiResponseUtil.map(usuario, UsuarioResponseDTO.class, "Usuário criado com sucesso");
+                // Depois criamos no banco de dados
+                Usuario usuario = new Usuario();
+                modelMapper.map(dto, usuario);
+                usuario.setKeycloakId(userId);
+                usuario = usuarioRepository.save(usuario);
+
+                UsuarioResponseDTO responseDTO = modelMapper.map(usuario, UsuarioResponseDTO.class);
+                return apiResponseUtil.success(responseDTO, "Usuário criado com sucesso");
+            } catch (KeycloakException e) {
+                logger.error("Erro ao criar usuário no Keycloak: ", e);
+                return apiResponseUtil.error(e.getErrorMessage(), e.getStatusCode());
+            }
+        } catch (SetorCargoInvalidoException e) {
+            logger.error("Erro de validação de setor/cargo: ", e);
+            return apiResponseUtil.error(e.getMessage(), 400);
         } catch (Exception e) {
             logger.error("Erro ao criar usuário: ", e);
             return apiResponseUtil.error("Erro ao criar usuário: " + e.getMessage(), 400);
@@ -100,7 +125,7 @@ public class UsuarioService {
     public ApiResponse<Page<UsuarioResponseDTO>> listarUsuarios(PageRequest pageRequest, String setor, String perfil,
             String status) {
         Specification<Usuario> spec = Specification.where(null);
-        
+
         spec = spec.and((root, query, cb) -> {
             assert query != null;
             query.orderBy(cb.desc(root.get("dataCriacao")));
@@ -125,26 +150,54 @@ public class UsuarioService {
 
     @Transactional
     public ApiResponse<Void> alternarStatusUsuarioPorEmail(EmailDTO emailDTO) {
-        Usuario usuario = usuarioRepository.findByEmail(emailDTO.getEmail())
-                .orElseThrow(() -> new UsuarioNaoEncontradoException(emailDTO.getEmail()));
+        try {
+            Usuario usuario = usuarioRepository.findByEmail(emailDTO.getEmail())
+                    .orElseThrow(() -> new UsuarioNaoEncontradoException(emailDTO.getEmail()));
 
-        if (usuario.getStatus().equals(StatusUsuario.ATIVO)) {
-            desativarUsuario(usuario);
-        } else {
-            ativarUsuario(usuario);
+            try {
+                KeycloakResponseDTO keycloakResponse;
+                if (usuario.getStatus().equals(StatusUsuario.ATIVO)) {
+                    keycloakResponse = keycloakAdminService.disableUser(usuario.getEmail());
+                    if (!keycloakResponse.isSuccess()) {
+                        throw new KeycloakException(
+                                "Erro ao desativar usuário no Keycloak: " + keycloakResponse.getErrorMessage(),
+                                keycloakResponse.getStatusCode(),
+                                "KEYCLOAK_DISABLE_ERROR");
+                    }
+                    usuario.setStatus(StatusUsuario.INATIVO);
+                } else {
+                    keycloakResponse = keycloakAdminService.enableUser(usuario.getEmail());
+                    if (!keycloakResponse.isSuccess()) {
+                        throw new KeycloakException(
+                                "Erro ao ativar usuário no Keycloak: " + keycloakResponse.getErrorMessage(),
+                                keycloakResponse.getStatusCode(),
+                                "KEYCLOAK_ENABLE_ERROR");
+                    }
+                    usuario.setStatus(StatusUsuario.ATIVO);
+                }
+
+                usuarioRepository.save(usuario);
+                return apiResponseUtil.success(null, "Status do usuário alterado com sucesso");
+            } catch (KeycloakException e) {
+                logger.error("Erro ao alterar status no Keycloak: {}", e.getMessage(), e);
+                throw new KeycloakException(
+                        "Erro ao alterar status do usuário no Keycloak: " + e.getMessage(),
+                        e.getStatusCode(),
+                        e.getErrorCode());
+            }
+        } catch (UsuarioNaoEncontradoException e) {
+            logger.error("Usuário não encontrado: {}", e.getMessage(), e);
+            throw new KeycloakException(
+                    "Usuário não encontrado com o email: " + emailDTO.getEmail(),
+                    404,
+                    "USER_NOT_FOUND");
+        } catch (Exception e) {
+            logger.error("Erro ao alternar status do usuário: {}", e.getMessage(), e);
+            throw new KeycloakException(
+                    "Erro interno ao alternar status do usuário: " + e.getMessage(),
+                    500,
+                    "INTERNAL_SERVER_ERROR");
         }
-
-        return apiResponseUtil.success(null, "Status do usuário alterado com sucesso");
-    }
-
-    private void desativarUsuario(Usuario usuario) {
-        usuario.setStatus(StatusUsuario.INATIVO);
-        keycloakAdminService.disableUser(usuario.getEmail());
-    }
-
-    private void ativarUsuario(Usuario usuario) {
-        usuario.setStatus(StatusUsuario.ATIVO);
-        keycloakAdminService.enableUser(usuario.getEmail());
     }
 
     @Transactional
@@ -167,7 +220,7 @@ public class UsuarioService {
 
             UserRepresentation userRepresentation = criarUserRepresentation(dto);
             atualizarUsuarioNoKeycloak(userRepresentation);
-            
+
             modelMapper.map(dto, usuario);
             usuario = usuarioRepository.save(usuario);
 
@@ -185,25 +238,25 @@ public class UsuarioService {
         user.setEmail(dto.getEmail());
         user.setUsername(dto.getEmail());
         user.setEnabled(dto.getStatus() == StatusUsuario.ATIVO);
-        
+
         // Configurar nome e sobrenome
         String[] nomeCompleto = dto.getNome().split(" ", 2);
         user.setFirstName(nomeCompleto[0]);
         user.setLastName(nomeCompleto.length > 1 ? nomeCompleto[1] : "");
-        
+
         // Configurar atributos adicionais se necessário
         Map<String, List<String>> attributes = new HashMap<>();
         attributes.put("setor", Collections.singletonList(dto.getSetor()));
         attributes.put("tipoUsuario", Collections.singletonList(dto.getTipoUsuario()));
         user.setAttributes(attributes);
-        
+
         return user;
     }
 
     private void atualizarUsuarioNoKeycloak(UserRepresentation userRepresentation) {
         // Busca o usuário no Keycloak pelo email que está no DTO (email atual)
         List<UserRepresentation> users = keycloak.realm(realm).users().search(userRepresentation.getEmail());
-        
+
         if (users.isEmpty()) {
             logger.error("Usuário não encontrado no Keycloak com email: {}", userRepresentation.getEmail());
             throw new RuntimeException("Usuário não encontrado no Keycloak");
@@ -211,16 +264,16 @@ public class UsuarioService {
 
         String userId = users.get(0).getId();
         logger.info("Usuário encontrado no Keycloak com ID: {}", userId);
-        
+
         // Atualizar informações básicas do usuário
         keycloakAdminService.updateUser(userId, userRepresentation);
-        
+
         // Atualizar roles
         Set<String> rolesAtuais = obterRolesAtuaisDoUsuario(userId);
         if (!rolesAtuais.isEmpty()) {
             keycloakAdminService.removeRolesFromUser(userId, rolesAtuais);
         }
-        
+
         Set<String> novasRoles = obterRolesPorTipo(userRepresentation.getAttributes().get("tipoUsuario").get(0));
         keycloakAdminService.assignRolesToUser(userId, novasRoles);
     }
@@ -252,7 +305,6 @@ public class UsuarioService {
 
         String novaSenha = gerarSenhaAleatoria();
         enviarSenhaPorEmail(email, novaSenha, usuario.getNome());
-        atualizarSenhaNoBanco(usuario, novaSenha);
         atualizarSenhaNoKeycloak(email, novaSenha);
 
         return apiResponseUtil.success(null, "Senha redefinida com sucesso");
@@ -263,12 +315,26 @@ public class UsuarioService {
     }
 
     public ApiResponse<Void> atualizarSenhaUsuario(UpdatePasswordDTO updatePasswordDTO) {
-        Usuario usuario = usuarioRepository.findByEmail(updatePasswordDTO.getEmail())
-                .orElseThrow(() -> new UsuarioNaoEncontradoException(updatePasswordDTO.getEmail()));
-        atualizarSenhaNoBanco(usuario, updatePasswordDTO.getSenha());
-        atualizarSenhaNoKeycloak(updatePasswordDTO.getEmail(), updatePasswordDTO.getSenha());
+        try {
+            Usuario usuario = usuarioRepository.findByEmail(updatePasswordDTO.getEmail())
+                    .orElseThrow(() -> new UsuarioNaoEncontradoException(updatePasswordDTO.getEmail()));
 
-        return apiResponseUtil.success(null, "Senha atualizada com sucesso");
+            KeycloakResponseDTO keycloakResponse = keycloakAdminService.updatePassword(
+                    usuario.getKeycloakId(), updatePasswordDTO.getSenha());
+
+            if (!keycloakResponse.isSuccess()) {
+                return apiResponseUtil.error(keycloakResponse.getErrorMessage(), keycloakResponse.getStatusCode());
+            }
+
+            return apiResponseUtil.success(null, "Senha atualizada com sucesso");
+        } catch (UsuarioNaoEncontradoException e) {
+            return apiResponseUtil.error(e.getMessage(), 404);
+        } catch (KeycloakException e) {
+            return apiResponseUtil.error(e.getErrorMessage(), e.getStatusCode());
+        } catch (Exception e) {
+            logger.error("Erro ao atualizar senha do usuário: ", e);
+            return apiResponseUtil.error("Erro ao atualizar senha do usuário: " + e.getMessage(), 400);
+        }
     }
 
     private void atualizarSenhaNoKeycloak(String email, String senha) {
@@ -280,18 +346,23 @@ public class UsuarioService {
         keycloakAdminService.updatePassword(userId, senha);
     }
 
-    private void atualizarSenhaNoBanco(Usuario usuario, String senha) {
-        usuario.setSenha(passwordEncoder.encode(senha));
-        usuarioRepository.save(usuario);
-    }
-
     public boolean existsByEmail(String email) {
-        return usuarioRepository.existsByEmail(email);
+        try {
+            return usuarioRepository.existsByEmail(email);
+        } catch (Exception e) {
+            logger.error("Erro ao verificar se o usuário existe: ", e);
+            return false;
+        }
     }
 
     public Usuario findByEmail(String email) {
-        return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new UsuarioNaoEncontradoException(email));
+        try {
+            return usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new UsuarioNaoEncontradoException(email));
+        } catch (Exception e) {
+            logger.error("Erro ao buscar usuário por email: ", e);
+            return null;
+        }
     }
 
     public ApiResponse<UsuarioResponseDTO> buscarUsuario(String email) {

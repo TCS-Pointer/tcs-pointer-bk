@@ -1,6 +1,5 @@
 package br.com.pointer.pointer_back.config;
 
-import br.com.pointer.pointer_back.dto.ApiResponse;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -9,6 +8,8 @@ import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
+
+import br.com.pointer.pointer_back.ApiResponse;
 
 @ControllerAdvice
 public class ApiResponseStatusAdvice implements ResponseBodyAdvice<ApiResponse<?>> {
@@ -20,12 +21,12 @@ public class ApiResponseStatusAdvice implements ResponseBodyAdvice<ApiResponse<?
 
     @Override
     public ApiResponse<?> beforeBodyWrite(ApiResponse<?> body, MethodParameter returnType,
-                                          MediaType selectedContentType,
-                                          Class<? extends HttpMessageConverter<?>> selectedConverterType,
-                                          ServerHttpRequest request, ServerHttpResponse response) {
+            MediaType selectedContentType,
+            Class<? extends HttpMessageConverter<?>> selectedConverterType,
+            ServerHttpRequest request, ServerHttpResponse response) {
         if (body != null) {
             response.setStatusCode(HttpStatus.valueOf(body.getStatus()));
         }
         return body;
     }
-} 
+}

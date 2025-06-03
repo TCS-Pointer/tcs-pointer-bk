@@ -38,4 +38,4 @@ public class KeycloakConfig {
                 .password(adminPassword)
                 .build();
     }
-} 
+}

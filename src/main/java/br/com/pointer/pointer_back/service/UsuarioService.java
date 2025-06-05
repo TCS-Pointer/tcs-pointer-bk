@@ -154,6 +154,11 @@ public class UsuarioService {
             Usuario usuario = usuarioRepository.findByEmail(emailDTO.getEmail())
                     .orElseThrow(() -> new UsuarioNaoEncontradoException(emailDTO.getEmail()));
 
+            if (usuario.getStatus().equals(StatusUsuario.ATIVO) && 
+                usuario.getEmail().equals(emailDTO.getEmail())) {
+                return apiResponseUtil.error("Você não pode desabilitar seu próprio perfil", 400);
+            }
+
             try {
                 KeycloakResponseDTO keycloakResponse;
                 if (usuario.getStatus().equals(StatusUsuario.ATIVO)) {

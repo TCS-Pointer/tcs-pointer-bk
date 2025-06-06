@@ -31,6 +31,12 @@ public class ComunicadoController {
         return ResponseEntity.ok(comunicadoService.listarTodos());
     }
 
+    @GetMapping("/listar-comunicados/setor/{setor}")
+    @PreAuthorize("hasRole('colaborador') or hasRole('admin') or hasRole('gestor')")
+    public ResponseEntity<List<ComunicadoDTO>> listarPorSetor(@PathVariable String setor) {
+        return ResponseEntity.ok(comunicadoService.listarPorSetor(setor));
+    }
+
     @GetMapping("/buscar-comunicado/{id}")
     @PreAuthorize("hasRole('colaborador') or hasRole('admin') or hasRole('gestor')")
     public ResponseEntity<ComunicadoDTO> buscarPorId(@PathVariable Long id) {

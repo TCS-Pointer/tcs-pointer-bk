@@ -28,6 +28,12 @@ public class ComunicadoService {
                 .collect(Collectors.toList());
     }
 
+    public List<ComunicadoDTO> listarPorSetor(String setor) {
+        return comunicadoRepository.findBySetor(setor).stream()
+                .map(comunicadoMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
     public ComunicadoDTO buscarPorId(Long id) {
         Optional<Comunicado> comunicado = comunicadoRepository.findById(id);
         return comunicadoMapper.toDTO(

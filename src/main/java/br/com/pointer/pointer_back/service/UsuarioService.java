@@ -370,10 +370,10 @@ public class UsuarioService {
         }
     }
 
-    public ApiResponse<UsuarioResponseDTO> buscarUsuario(String email) {
+    public ApiResponse<UsuarioResponseDTO> buscarUsuario(String keycloakId) {
         try {
-            Usuario usuario = usuarioRepository.findByEmail(email)
-                    .orElseThrow(() -> new UsuarioNaoEncontradoException(email));
+            Usuario usuario = usuarioRepository.findByKeycloakId(keycloakId)
+                    .orElseThrow(() -> new UsuarioNaoEncontradoException(keycloakId));
             return apiResponseUtil.map(usuario, UsuarioResponseDTO.class, "Usuário encontrado com sucesso");
         } catch (UsuarioNaoEncontradoException e) {
             return apiResponseUtil.error(e.getMessage(), 404);

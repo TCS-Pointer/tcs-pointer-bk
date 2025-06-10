@@ -88,8 +88,8 @@ public class UsuarioController {
                 exists ? "Email já cadastrado" : "Email disponível");
     }
 
-    @GetMapping("/{email}")
-    public ApiResponse<UsuarioResponseDTO> buscarUsuario(@PathVariable String email) {
-        return usuarioService.buscarUsuario(email);
+    @GetMapping("/{keycloakId}")
+    public ApiResponse<UsuarioResponseDTO> buscarUsuario(@PathVariable String keycloakId) {
+        return usuarioService.buscarUsuario(keycloakId);
     }
 }

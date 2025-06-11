@@ -54,7 +54,6 @@ public class ComunicadoService {
         comunicadoExistente.setTitulo(comunicadoAtualizado.getTitulo());
         comunicadoExistente.setDescricao(comunicadoAtualizado.getDescricao());
         comunicadoExistente.setSetor(comunicadoAtualizado.getSetor());
-        comunicadoExistente.setCargo(comunicadoAtualizado.getCargo());
         
         return comunicadoMapper.toDTO(comunicadoRepository.save(comunicadoExistente));
     }

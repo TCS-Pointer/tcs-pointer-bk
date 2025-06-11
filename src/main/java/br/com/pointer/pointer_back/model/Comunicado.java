@@ -29,9 +29,6 @@ public class Comunicado {
     @Column(nullable = false)
     private String setor;
 
-    @Column(nullable = false)
-    private String cargo;
-
     @Column(name = "dt_publicacao", nullable = false)
     private LocalDateTime dataPublicacao;
 

@@ -21,11 +21,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>, JpaSpec
     boolean existsByEmail(String email);
 
     @Query("SELECT u FROM Usuario u WHERE " +
-           "(:setor IS NULL OR u.setor = :setor) AND " +
-           "(:cargo IS NULL OR u.cargo = :cargo)")
+           "(:tipoUsuario IS NULL OR u.tipoUsuario = :tipoUsuario) AND " +
+           "(:setor IS NULL OR u.setor = :setor)")
     Page<Usuario> findByFilters(
+        @Param("tipoUsuario") String tipoUsuario,
         @Param("setor") String setor,
-        @Param("cargo") String cargo,
         Pageable pageable
     );
 

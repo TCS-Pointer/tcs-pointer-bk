@@ -27,6 +27,7 @@ import org.springframework.util.StringUtils;
 import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.dto.EmailDTO;
 import br.com.pointer.pointer_back.dto.KeycloakResponseDTO;
+import br.com.pointer.pointer_back.dto.TipoUsuarioStatsDTO;
 import br.com.pointer.pointer_back.dto.UpdatePasswordDTO;
 import br.com.pointer.pointer_back.dto.UsuarioDTO;
 import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
@@ -360,16 +361,6 @@ public class UsuarioService {
         }
     }
 
-    public Usuario findByEmail(String email) {
-        try {
-            return usuarioRepository.findByEmail(email)
-                    .orElseThrow(() -> new UsuarioNaoEncontradoException(email));
-        } catch (Exception e) {
-            logger.error("Erro ao buscar usuário por email: ", e);
-            return null;
-        }
-    }
-
     public ApiResponse<UsuarioResponseDTO> buscarUsuario(String keycloakId) {
         try {
             Usuario usuario = usuarioRepository.findByKeycloakId(keycloakId)
@@ -377,6 +368,28 @@ public class UsuarioService {
             return apiResponseUtil.map(usuario, UsuarioResponseDTO.class, "Usuário encontrado com sucesso");
         } catch (UsuarioNaoEncontradoException e) {
             return apiResponseUtil.error(e.getMessage(), 404);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<List<TipoUsuarioStatsDTO>> buscarEstatisticasTipoUsuario() {
+        try {
+            List<TipoUsuarioStatsDTO> stats = usuarioRepository.findTipoUsuarioStats();
+            return apiResponseUtil.success(stats, "Estatísticas dos tipos de usuários obtidas com sucesso");
+        } catch (Exception e) {
+            logger.error("Erro ao buscar estatísticas dos tipos de usuários: ", e);
+            return apiResponseUtil.error("Erro ao buscar estatísticas: " + e.getMessage(), 500);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<List<String>> buscarSetoresDistintos() {
+        try {
+            List<String> setores = usuarioRepository.findDistinctSetores();
+            return apiResponseUtil.success(setores, "Setores distintos obtidos com sucesso");
+        } catch (Exception e) {
+            logger.error("Erro ao buscar setores distintos: ", e);
+            return apiResponseUtil.error("Erro ao buscar setores: " + e.getMessage(), 500);
         }
     }
 }

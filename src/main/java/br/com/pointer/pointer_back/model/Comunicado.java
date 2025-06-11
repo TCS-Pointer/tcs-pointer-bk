@@ -29,6 +29,9 @@ public class Comunicado {
     @Column(nullable = false)
     private String setor;
 
+    @Column(name = "apenas_gestores", nullable = false)
+    private boolean apenasGestores;
+
     @Column(name = "dt_publicacao", nullable = false)
     private LocalDateTime dataPublicacao;
 

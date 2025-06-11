@@ -123,8 +123,7 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<Page<UsuarioResponseDTO>> listarUsuarios(PageRequest pageRequest, String setor, String perfil,
-            String status) {
+    public ApiResponse<Page<UsuarioResponseDTO>> listarUsuarios(PageRequest pageRequest, String tipoUsuario, String setor) {
         Specification<Usuario> spec = Specification.where(null);
 
         spec = spec.and((root, query, cb) -> {
@@ -133,19 +132,15 @@ public class UsuarioService {
             return null;
         });
 
+        if (StringUtils.hasText(tipoUsuario)) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("tipoUsuario"), tipoUsuario));
+        }
+
         if (StringUtils.hasText(setor)) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("setor"), setor));
         }
 
-        if (StringUtils.hasText(perfil)) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("tipoUsuario"), perfil));
-        }
-
-        if (StringUtils.hasText(status)) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
-        }
-
-        Page<Usuario> usuarios = usuarioRepository.findAll(spec, pageRequest);
+        Page<Usuario> usuarios = usuarioRepository.findByFilters(tipoUsuario, setor, pageRequest);
         return apiResponseUtil.mapPage(usuarios, UsuarioResponseDTO.class, "Usuários listados com sucesso");
     }
 

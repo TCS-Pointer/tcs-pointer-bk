@@ -15,6 +15,7 @@ public class ComunicadoDTO {
     private String titulo;
     private String descricao;
     private String setor;
+    private boolean apenasGestores;
     
     @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
     private LocalDateTime dataPublicacao;

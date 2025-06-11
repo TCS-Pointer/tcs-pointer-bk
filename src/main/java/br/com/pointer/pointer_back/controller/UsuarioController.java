@@ -1,7 +1,10 @@
 package br.com.pointer.pointer_back.controller;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.dto.EmailDTO;
+import br.com.pointer.pointer_back.dto.TipoUsuarioStatsDTO;
 import br.com.pointer.pointer_back.dto.UpdatePasswordDTO;
 import br.com.pointer.pointer_back.dto.UsuarioDTO;
 import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
@@ -91,5 +95,17 @@ public class UsuarioController {
     @GetMapping("/{keycloakId}")
     public ApiResponse<UsuarioResponseDTO> buscarUsuario(@PathVariable String keycloakId) {
         return usuarioService.buscarUsuario(keycloakId);
+    }
+
+    @GetMapping("/estatisticas/tipos")
+    @PreAuthorize("hasRole('admin')")
+    public ApiResponse<List<TipoUsuarioStatsDTO>> buscarEstatisticasTipoUsuario() {
+        return usuarioService.buscarEstatisticasTipoUsuario();
+    }
+
+    @GetMapping("/setores")
+    @PreAuthorize("hasRole('admin')")
+    public ApiResponse<List<String>> buscarSetoresDistintos() {
+        return usuarioService.buscarSetoresDistintos();
     }
 }

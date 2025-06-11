@@ -15,7 +15,6 @@ public class ComunicadoDTO {
     private String titulo;
     private String descricao;
     private String setor;
-    private String cargo;
     private LocalDateTime dataPublicacao;
 
     public String getDataPublicacaoFormatada() {

@@ -18,7 +18,6 @@ public class ComunicadoMapper {
         dto.setTitulo(comunicado.getTitulo());
         dto.setDescricao(comunicado.getDescricao());
         dto.setSetor(comunicado.getSetor());
-        dto.setCargo(comunicado.getCargo());
         dto.setDataPublicacao(comunicado.getDataPublicacao());
 
         return dto;
@@ -34,7 +33,6 @@ public class ComunicadoMapper {
         comunicado.setTitulo(dto.getTitulo());
         comunicado.setDescricao(dto.getDescricao());
         comunicado.setSetor(dto.getSetor());
-        comunicado.setCargo(dto.getCargo());
         // Não setamos a dataPublicacao aqui pois ela é gerenciada pelo @PrePersist
 
         return comunicado;

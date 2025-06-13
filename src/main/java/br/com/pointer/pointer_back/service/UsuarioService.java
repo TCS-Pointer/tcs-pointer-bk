@@ -37,6 +37,8 @@ import br.com.pointer.pointer_back.model.StatusUsuario;
 import br.com.pointer.pointer_back.model.Usuario;
 import br.com.pointer.pointer_back.repository.UsuarioRepository;
 import br.com.pointer.pointer_back.util.ApiResponseUtil;
+import br.com.pointer.pointer_back.exception.ResourceNotFoundException;
+import br.com.pointer.pointer_back.mapper.UsuarioMapper;
 
 @Service
 public class UsuarioService {
@@ -51,6 +53,7 @@ public class UsuarioService {
     private final String realm;
     private final ApiResponseUtil apiResponseUtil;
     private final SetorCargoService setorCargoService;
+    private final UsuarioMapper usuarioMapper;
 
     public UsuarioService(
             UsuarioRepository usuarioRepository,
@@ -60,7 +63,8 @@ public class UsuarioService {
             ApiResponseUtil apiResponseUtil,
             Keycloak keycloak,
             SetorCargoService setorCargoService,
-            @Value("${keycloak.realm}") String realm) {
+            @Value("${keycloak.realm}") String realm,
+            UsuarioMapper usuarioMapper) {
         this.usuarioRepository = usuarioRepository;
         this.keycloakAdminService = keycloakAdminService;
         this.modelMapper = modelMapper;
@@ -69,6 +73,7 @@ public class UsuarioService {
         this.keycloak = keycloak;
         this.setorCargoService = setorCargoService;
         this.realm = realm;
+        this.usuarioMapper = usuarioMapper;
     }
 
     @Transactional
@@ -154,8 +159,8 @@ public class UsuarioService {
             Usuario usuario = usuarioRepository.findByEmail(emailDTO.getEmail())
                     .orElseThrow(() -> new UsuarioNaoEncontradoException(emailDTO.getEmail()));
 
-            if (usuario.getStatus().equals(StatusUsuario.ATIVO) && 
-                usuario.getEmail().equals(emailDTO.getEmail())) {
+            if (usuario.getStatus().equals(StatusUsuario.ATIVO) &&
+                    usuario.getEmail().equals(emailDTO.getEmail())) {
                 return apiResponseUtil.error("Você não pode desabilitar seu próprio perfil", 400);
             }
 
@@ -378,5 +383,27 @@ public class UsuarioService {
         } catch (UsuarioNaoEncontradoException e) {
             return apiResponseUtil.error(e.getMessage(), 404);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public UsuarioResponseDTO buscarPorKeycloakId(String keycloakId) {
+        Usuario usuario = usuarioRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Usuário não encontrado com o ID do Keycloak: " + keycloakId));
+        return usuarioMapper.toDTO(usuario);
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<List<UsuarioResponseDTO>> buscarUsuariosPorSetor(String keycloakId) {
+        Usuario usuarioBase = usuarioRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Usuário não encontrado com Keycloak ID: " + keycloakId));
+
+        List<Usuario> usuarios = usuarioRepository.findBySetor(usuarioBase.getSetor());
+        List<UsuarioResponseDTO> usuariosDTO = usuarios.stream()
+                .map(usuarioMapper::toDTO)
+                .collect(Collectors.toList());
+
+        return apiResponseUtil.success(usuariosDTO, "Usuários do setor listados com sucesso");
     }
 }

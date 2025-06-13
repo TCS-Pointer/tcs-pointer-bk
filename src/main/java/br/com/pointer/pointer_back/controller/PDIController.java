@@ -47,18 +47,19 @@ public class PDIController {
         return ResponseEntity.ok(new ApiResponse<List<pdiDTO>>().ok(pdis, "PDIs do usuário listados com sucesso"));
     }
 
+    @GetMapping("/com-destinatario")
+    @PreAuthorize("hasRole('admin')")
+    public ResponseEntity<ApiResponse<List<pdiDTO>>> listarTodosComDestinatario() {
+        List<pdiDTO> pdis = pdiService.listarTodosComDestinatario();
+        return ResponseEntity
+                .ok(new ApiResponse<List<pdiDTO>>().ok(pdis, "PDIs com destinatário listados com sucesso"));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('admin') or hasRole('gestor')")
     public ResponseEntity<ApiResponse<pdiDTO>> buscarPorId(@PathVariable Long id) {
         pdiDTO pdi = pdiService.buscarPorId(id);
         return ResponseEntity.ok(new ApiResponse<pdiDTO>().ok(pdi, "PDI encontrado com sucesso"));
-    }
-
-    @GetMapping
-    @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<ApiResponse<List<pdiDTO>>> listarTodos() {
-        List<pdiDTO> pdis = pdiService.listarTodos();
-        return ResponseEntity.ok(new ApiResponse<List<pdiDTO>>().ok(pdis, "PDIs listados com sucesso"));
     }
 
     @PostMapping

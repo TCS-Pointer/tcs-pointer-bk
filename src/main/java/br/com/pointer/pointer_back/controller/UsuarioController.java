@@ -2,6 +2,7 @@ package br.com.pointer.pointer_back.controller;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,6 +20,8 @@ import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
 import br.com.pointer.pointer_back.service.UsuarioService;
 import br.com.pointer.pointer_back.util.ApiResponseUtil;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -91,5 +94,17 @@ public class UsuarioController {
     @GetMapping("/{email}")
     public ApiResponse<UsuarioResponseDTO> buscarUsuario(@PathVariable String email) {
         return usuarioService.buscarUsuario(email);
+    }
+
+    @GetMapping("/keycloak/{keycloakId}")
+    public ResponseEntity<ApiResponse<UsuarioResponseDTO>> getUsuarioByKeycloakId(@PathVariable String keycloakId) {
+        UsuarioResponseDTO usuario = usuarioService.buscarPorKeycloakId(keycloakId);
+        return ResponseEntity.ok(new ApiResponse<UsuarioResponseDTO>().ok(usuario, "Usuário encontrado com sucesso"));
+    }
+
+    @GetMapping("/setor/{keycloakId}")
+    public ResponseEntity<ApiResponse<List<UsuarioResponseDTO>>> getUsuariosPorSetor(@PathVariable String keycloakId) {
+        ApiResponse<List<UsuarioResponseDTO>> response = usuarioService.buscarUsuariosPorSetor(keycloakId);
+        return ResponseEntity.ok(response);
     }
 }

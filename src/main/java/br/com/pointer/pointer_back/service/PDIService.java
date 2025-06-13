@@ -54,11 +54,7 @@ public class PDIService {
         try {
             List<PDI> pdis = pdiRepository.findByIdUsuario(idUsuario);
             return pdis.stream()
-                    .map(pdi -> {
-                        pdiDTO dto = new pdiDTO();
-                        pdiMapper.toDTO(dto, pdi);
-                        return dto;
-                    })
+                    .map(pdiMapper::toDTO)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             logger.error("Erro ao buscar PDIs por usuário: ", e);
@@ -71,11 +67,7 @@ public class PDIService {
         try {
             List<PDI> pdis = pdiRepository.findByIdDestinatario(idDestinatario);
             return pdis.stream()
-                    .map(pdi -> {
-                        pdiDTO dto = new pdiDTO();
-                        pdiMapper.toDTO(dto, pdi);
-                        return dto;
-                    })
+                    .map(pdiMapper::toDTO)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             logger.error("Erro ao buscar PDIs por destinatário: ", e);
@@ -138,10 +130,7 @@ public class PDIService {
             PDI salvo = pdiRepository.save(pdi);
             logger.info("PDI salvo com sucesso: {}", salvo);
 
-            pdiMapper.toDTO(dto, salvo);
-            logger.info("PDI convertido de volta para DTO: {}", dto);
-
-            return dto;
+            return pdiMapper.toDTO(salvo);
         } catch (IllegalArgumentException e) {
             logger.error("Erro de validação ao criar PDI: ", e);
             throw e;
@@ -156,11 +145,7 @@ public class PDIService {
         try {
             List<PDI> pdis = pdiRepository.findAll();
             return pdis.stream()
-                    .map(pdi -> {
-                        pdiDTO dto = new pdiDTO();
-                        pdiMapper.toDTO(dto, pdi);
-                        return dto;
-                    })
+                    .map(pdiMapper::toDTO)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             logger.error("Erro ao listar PDIs: ", e);
@@ -173,9 +158,7 @@ public class PDIService {
         try {
             PDI pdi = pdiRepository.findById(id)
                     .orElseThrow(() -> new PDINaoEncontradoException("PDI não encontrado com ID: " + id));
-            pdiDTO dto = new pdiDTO();
-            pdiMapper.toDTO(dto, pdi);
-            return dto;
+            return pdiMapper.toDTO(pdi);
         } catch (Exception e) {
             logger.error("Erro ao buscar PDI: ", e);
             throw new RuntimeException("Erro ao buscar PDI: " + e.getMessage());
@@ -199,8 +182,7 @@ public class PDIService {
 
             pdiMapper.updateEntityFromDTO(dto, pdi);
             PDI atualizado = pdiRepository.save(pdi);
-            pdiMapper.toDTO(dto, atualizado);
-            return dto;
+            return pdiMapper.toDTO(atualizado);
         } catch (IllegalArgumentException e) {
             logger.error("Erro de validação ao atualizar PDI: ", e);
             throw e;
@@ -257,12 +239,23 @@ public class PDIService {
             }
 
             PDI atualizado = pdiRepository.save(pdi);
-            pdiDTO dtoResponse = new pdiDTO();
-            pdiMapper.toDTO(dtoResponse, atualizado);
-            return dtoResponse;
+            return pdiMapper.toDTO(atualizado);
         } catch (Exception e) {
             logger.error("Erro ao atualizar status do marco: ", e);
             throw new RuntimeException("Erro ao atualizar status do marco: " + e.getMessage());
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<pdiDTO> listarTodosComDestinatario() {
+        try {
+            List<PDI> pdis = pdiRepository.findAllWithDestinatario();
+            return pdis.stream()
+                    .map(pdiMapper::toDTO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Erro ao listar PDIs com destinatário: ", e);
+            throw new RuntimeException("Erro ao listar PDIs com destinatário: " + e.getMessage());
         }
     }
 }

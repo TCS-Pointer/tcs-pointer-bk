@@ -73,7 +73,7 @@ public class PDIController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('usuario') or hasRole('admin')")
+    @PreAuthorize("hasRole('usuario') or hasRole('admin') or hasRole('gestor')")
     public ResponseEntity<ApiResponse<pdiDTO>> atualizarStatus(@PathVariable Long id,
             @RequestBody AtualizarStatusPDIDTO dto) {
         try {

@@ -39,6 +39,10 @@ public class PDI {
     @Column(name = "id_usuario", nullable = false)
     private Long idUsuario;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario", insertable = false, updatable = false)
+    private Usuario usuario;
+
     @Column(name = "dt_criacao", nullable = false)
     private LocalDateTime dataCriacao;
 

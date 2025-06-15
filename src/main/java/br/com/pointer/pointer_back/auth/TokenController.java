@@ -35,22 +35,23 @@ public class TokenController {
     @Value("${keycloak.realm:pointer}")
     private String realm;
 
-    @Autowired
-    private Keycloak keycloak;
+    @Value("${keycloak.client-id:pointer}")
+    private String clientId;
+
 
     @PostMapping
-    public ApiResponse<TokenResponse> token(@RequestBody User user) {
+    public ApiResponse<TokenResponse> token(@RequestBody LoginRequest loginRequest) {
         try {
             HttpHeaders headers = new HttpHeaders();
             RestTemplate restTemplate = new RestTemplate();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
             MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-            formData.add("client_id", user.clientId());
+            formData.add("client_id", clientId);
             formData.add("client_secret", clientSecret);
-            formData.add("username", user.username());
-            formData.add("password", user.password());
-            formData.add("grant_type", user.grantType());
+            formData.add("username", loginRequest.username());
+            formData.add("password", loginRequest.password());
+            formData.add("grant_type", "password");
             formData.add("scope", "openid");
             formData.add("expires_in", "100000");
 
@@ -58,6 +59,7 @@ public class TokenController {
             String tokenUrl = String.format("%s/realms/%s/protocol/openid-connect/token", authServerUrl, realm);
 
             ResponseEntity<TokenResponse> response = restTemplate.postForEntity(tokenUrl, entity, TokenResponse.class);
+            logger.info("Login do username: {}", loginRequest.username());
             return new ApiResponse<TokenResponse>().ok(response.getBody(), "Token gerado com sucesso");
         } catch (HttpClientErrorException e) {
             logger.error("Erro ao gerar token: {}", e.getMessage(), e);
@@ -105,6 +107,6 @@ public class TokenController {
         }
     }
 
-    public record User(String password, String clientId, String username, String grantType) {
+    public record LoginRequest(String username, String password) {
     }
 }

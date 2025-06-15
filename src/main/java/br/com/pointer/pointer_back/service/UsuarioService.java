@@ -25,12 +25,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import br.com.pointer.pointer_back.ApiResponse;
-import br.com.pointer.pointer_back.dto.EmailDTO;
+import br.com.pointer.pointer_back.dto.AlterarStatusDTO;
 import br.com.pointer.pointer_back.dto.KeycloakResponseDTO;
 import br.com.pointer.pointer_back.dto.TipoUsuarioStatsDTO;
 import br.com.pointer.pointer_back.dto.UpdatePasswordDTO;
 import br.com.pointer.pointer_back.dto.UsuarioDTO;
 import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
+import br.com.pointer.pointer_back.dto.UsuarioUpdateDTO;
 import br.com.pointer.pointer_back.exception.KeycloakException;
 import br.com.pointer.pointer_back.exception.SetorCargoInvalidoException;
 import br.com.pointer.pointer_back.exception.UsuarioNaoEncontradoException;
@@ -38,6 +39,7 @@ import br.com.pointer.pointer_back.model.StatusUsuario;
 import br.com.pointer.pointer_back.model.Usuario;
 import br.com.pointer.pointer_back.repository.UsuarioRepository;
 import br.com.pointer.pointer_back.util.ApiResponseUtil;
+import br.com.pointer.pointer_back.dto.TipoUsuarioStatsResponseDTO;
 
 @Service
 public class UsuarioService {
@@ -123,7 +125,7 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<Page<UsuarioResponseDTO>> listarUsuarios(PageRequest pageRequest, String tipoUsuario, String setor) {
+    public ApiResponse<Page<UsuarioResponseDTO>> listarUsuarios(PageRequest pageRequest, String tipoUsuario, String setor, String status) {
         Specification<Usuario> spec = Specification.where(null);
 
         spec = spec.and((root, query, cb) -> {
@@ -140,18 +142,30 @@ public class UsuarioService {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("setor"), setor));
         }
 
-        Page<Usuario> usuarios = usuarioRepository.findByFilters(tipoUsuario, setor, pageRequest);
+        StatusUsuario statusUsuario = null;
+        if (StringUtils.hasText(status)) {
+            try {
+                statusUsuario = StatusUsuario.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                logger.warn("Status inválido: {}", status);
+            }
+        }
+
+        Page<Usuario> usuarios = usuarioRepository.findByFilters(tipoUsuario, setor, statusUsuario, pageRequest);
         return apiResponseUtil.mapPage(usuarios, UsuarioResponseDTO.class, "Usuários listados com sucesso");
     }
 
     @Transactional
-    public ApiResponse<Void> alternarStatusUsuarioPorEmail(EmailDTO emailDTO) {
+    public ApiResponse<Void> alternarStatusUsuarioPorEmail(AlterarStatusDTO alterarStatusDTO) {
         try {
-            Usuario usuario = usuarioRepository.findByEmail(emailDTO.getEmail())
-                    .orElseThrow(() -> new UsuarioNaoEncontradoException(emailDTO.getEmail()));
+            Usuario usuario = usuarioRepository.findByEmail(alterarStatusDTO.getEmailChangeStatus())
+                    .orElseThrow(() -> new UsuarioNaoEncontradoException(alterarStatusDTO.getEmailChangeStatus()));
+
+                    logger.info("Usuario alterando status: {}",alterarStatusDTO.getEmailSend());
+                    logger.info("Usuario alterado status: {}",usuario.getEmail());
 
             if (usuario.getStatus().equals(StatusUsuario.ATIVO) && 
-                usuario.getEmail().equals(emailDTO.getEmail())) {
+                usuario.getEmail().equals(alterarStatusDTO.getEmailSend())) {
                 return apiResponseUtil.error("Você não pode desabilitar seu próprio perfil", 400);
             }
 
@@ -175,6 +189,9 @@ public class UsuarioService {
                                 "KEYCLOAK_ENABLE_ERROR");
                     }
                     usuario.setStatus(StatusUsuario.ATIVO);
+                    logger.info("Usuário ativado: {}", usuario.getEmail());
+                    //ususario ativado por tal email
+                    
                 }
 
                 usuarioRepository.save(usuario);
@@ -189,7 +206,7 @@ public class UsuarioService {
         } catch (UsuarioNaoEncontradoException e) {
             logger.error("Usuário não encontrado: {}", e.getMessage(), e);
             throw new KeycloakException(
-                    "Usuário não encontrado com o email: " + emailDTO.getEmail(),
+                    "Usuário não encontrado com o email: " + alterarStatusDTO.getEmailChangeStatus(),
                     404,
                     "USER_NOT_FOUND");
         } catch (Exception e) {
@@ -367,10 +384,15 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<List<TipoUsuarioStatsDTO>> buscarEstatisticasTipoUsuario() {
+    public ApiResponse<TipoUsuarioStatsResponseDTO> buscarEstatisticasTipoUsuario() {
         try {
             List<TipoUsuarioStatsDTO> stats = usuarioRepository.findTipoUsuarioStats();
-            return apiResponseUtil.success(stats, "Estatísticas dos tipos de usuários obtidas com sucesso");
+            Long totalGeral = stats.stream()
+                .mapToLong(TipoUsuarioStatsDTO::getTotal)
+                .sum();
+            
+            TipoUsuarioStatsResponseDTO response = new TipoUsuarioStatsResponseDTO(stats, totalGeral);
+            return apiResponseUtil.success(response, "Estatísticas dos tipos de usuários obtidas com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao buscar estatísticas dos tipos de usuários: ", e);
             return apiResponseUtil.error("Erro ao buscar estatísticas: " + e.getMessage(), 500);
@@ -385,6 +407,37 @@ public class UsuarioService {
         } catch (Exception e) {
             logger.error("Erro ao buscar setores distintos: ", e);
             return apiResponseUtil.error("Erro ao buscar setores: " + e.getMessage(), 500);
+        }
+    }
+
+    public ApiResponse<UsuarioResponseDTO> atualizarUsuario(String id, UsuarioUpdateDTO usuarioUpdateDTO) {
+        try {
+            Usuario usuario = usuarioRepository.findById(Long.parseLong(id))
+                    .orElseThrow(() -> new UsuarioNaoEncontradoException(id));
+
+            setorCargoService.validarSetorECargo(usuarioUpdateDTO.getSetor(), usuarioUpdateDTO.getCargo());
+            if (!usuario.getTipoUsuario().equals(usuarioUpdateDTO.getTipoUsuario())) {
+                Set<String> rolesAtuais = obterRolesAtuaisDoUsuario(usuario.getKeycloakId());
+                if (!rolesAtuais.isEmpty()) {
+                    keycloakAdminService.removeRolesFromUser(usuario.getKeycloakId(), rolesAtuais);
+                }
+                Set<String> novasRoles = obterRolesPorTipo(usuarioUpdateDTO.getTipoUsuario());
+                keycloakAdminService.assignRolesToUser(usuario.getKeycloakId(), novasRoles);
+            }
+
+            modelMapper.map(usuarioUpdateDTO, usuario);
+            usuario = usuarioRepository.save(usuario);
+
+            return apiResponseUtil.map(usuario, UsuarioResponseDTO.class, "Usuário atualizado com sucesso");
+        } catch (UsuarioNaoEncontradoException e) {
+            logger.error("Usuário não encontrado: {}", e.getMessage(), e);
+            return apiResponseUtil.error(e.getMessage(), 404);
+        } catch (SetorCargoInvalidoException e) {
+            logger.error("Erro de validação de setor/cargo: ", e);
+            return apiResponseUtil.error(e.getMessage(), 400);
+        } catch (Exception e) {
+            logger.error("Erro ao atualizar usuário: ", e);
+            return apiResponseUtil.error("Erro ao atualizar usuário: " + e.getMessage(), 400);
         }
     }
 }

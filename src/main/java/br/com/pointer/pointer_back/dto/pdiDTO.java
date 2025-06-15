@@ -16,5 +16,6 @@ public class pdiDTO {
     private LocalDate dataInicio;
     private LocalDate dataFim;
     private Long idUsuario;
+    private UsuarioResponseDTO usuario;
     private List<MarcoPDIDTO> marcos;
 }

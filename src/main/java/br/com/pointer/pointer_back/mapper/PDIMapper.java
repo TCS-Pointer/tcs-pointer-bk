@@ -37,6 +37,13 @@ public class PDIMapper {
             pdi.setIdUsuario(dto.getIdUsuario());
             pdi.setStatus(dto.getStatus());
 
+            // Mapeando o usuário que criou o PDI
+            if (dto.getIdUsuario() != null) {
+                Usuario usuario = new Usuario();
+                usuario.setId(dto.getIdUsuario());
+                pdi.setUsuario(usuario);
+            }
+
             // Mapeando o destinatário
             if (dto.getIdDestinatario() != null) {
                 Usuario destinatario = new Usuario();
@@ -82,6 +89,19 @@ public class PDIMapper {
             dto.setDataFim(pdi.getDtFim());
             dto.setIdUsuario(pdi.getIdUsuario());
             dto.setStatus(pdi.getStatus());
+
+            // Mapeando o usuário que criou o PDI
+            if (pdi.getUsuario() != null) {
+                UsuarioResponseDTO usuarioDTO = new UsuarioResponseDTO();
+                usuarioDTO.setId(pdi.getUsuario().getId());
+                usuarioDTO.setNome(pdi.getUsuario().getNome());
+                usuarioDTO.setEmail(pdi.getUsuario().getEmail());
+                usuarioDTO.setSetor(pdi.getUsuario().getSetor());
+                usuarioDTO.setCargo(pdi.getUsuario().getCargo());
+                usuarioDTO.setTipoUsuario(pdi.getUsuario().getTipoUsuario());
+                usuarioDTO.setStatus(pdi.getUsuario().getStatus());
+                dto.setUsuario(usuarioDTO);
+            }
 
             // Mapeando o destinatário
             if (pdi.getDestinatario() != null) {
@@ -137,8 +157,11 @@ public class PDIMapper {
                 pdi.setDtInicio(dto.getDataInicio());
             if (dto.getDataFim() != null)
                 pdi.setDtFim(dto.getDataFim());
-            if (dto.getIdUsuario() != null)
-                pdi.setIdUsuario(dto.getIdUsuario());
+            if (dto.getIdUsuario() != null) {
+                Usuario usuario = new Usuario();
+                usuario.setId(dto.getIdUsuario());
+                pdi.setUsuario(usuario);
+            }
             if (dto.getStatus() != null) {
                 logger.info("Atualizando status para: {}", dto.getStatus());
                 pdi.setStatus(dto.getStatus());

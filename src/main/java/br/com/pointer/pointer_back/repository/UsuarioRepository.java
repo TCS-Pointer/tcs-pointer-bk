@@ -2,6 +2,7 @@ package br.com.pointer.pointer_back.repository;
 
 import br.com.pointer.pointer_back.model.Usuario;
 import br.com.pointer.pointer_back.dto.TipoUsuarioStatsDTO;
+import br.com.pointer.pointer_back.model.StatusUsuario;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,18 +23,20 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>, JpaSpec
 
     @Query("SELECT u FROM Usuario u WHERE " +
            "(:tipoUsuario IS NULL OR u.tipoUsuario = :tipoUsuario) AND " +
-           "(:setor IS NULL OR u.setor = :setor)")
+           "(:setor IS NULL OR u.setor = :setor) AND " +
+           "(:status IS NULL OR u.status = :status)")
     Page<Usuario> findByFilters(
         @Param("tipoUsuario") String tipoUsuario,
         @Param("setor") String setor,
+        @Param("status") StatusUsuario status,
         Pageable pageable
     );
 
-    @Query("SELECT new br.com.pointer.pointer_back.dto.TipoUsuarioStatsDTO(u.tipoUsuario, COUNT(u)) " +
-           "FROM Usuario u " +
-           "GROUP BY u.tipoUsuario " +
+    @Query("SELECT new br.com.pointer.pointer_back.dto.TipoUsuarioStatsDTO(tipo, " +
+           "COALESCE((SELECT COUNT(u) FROM Usuario u WHERE u.tipoUsuario = tipo AND u.status = 'ATIVO'), 0)) " +
+           "FROM (SELECT 'ADMIN' as tipo UNION SELECT 'GESTOR' UNION SELECT 'COLABORADOR') tipos " +
            "ORDER BY " +
-           "CASE u.tipoUsuario " +
+           "CASE tipo " +
            "    WHEN 'ADMIN' THEN 1 " +
            "    WHEN 'GESTOR' THEN 2 " +
            "    WHEN 'COLABORADOR' THEN 3 " +

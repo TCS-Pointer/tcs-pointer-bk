@@ -15,11 +15,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.pointer.pointer_back.ApiResponse;
+import br.com.pointer.pointer_back.dto.AlterarStatusDTO;
 import br.com.pointer.pointer_back.dto.EmailDTO;
-import br.com.pointer.pointer_back.dto.TipoUsuarioStatsDTO;
+import br.com.pointer.pointer_back.dto.TipoUsuarioStatsResponseDTO;
 import br.com.pointer.pointer_back.dto.UpdatePasswordDTO;
 import br.com.pointer.pointer_back.dto.UsuarioDTO;
 import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
+import br.com.pointer.pointer_back.dto.UsuarioUpdateDTO;
 import br.com.pointer.pointer_back.service.UsuarioService;
 import br.com.pointer.pointer_back.util.ApiResponseUtil;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,7 @@ public class UsuarioController {
     private final ApiResponseUtil apiResponseUtil;
 
     @PostMapping
+    @PreAuthorize("hasRole('admin')")
     public ApiResponse<UsuarioResponseDTO> criarUsuario(@RequestBody UsuarioDTO usuarioDTO) {
         return usuarioService.criarUsuario(usuarioDTO);
     }
@@ -42,14 +45,15 @@ public class UsuarioController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String tipoUsuario,
-            @RequestParam(required = false) String setor) {
+            @RequestParam(required = false) String setor,
+            @RequestParam(required = false) String status) {
         return usuarioService.listarUsuarios(
-                PageRequest.of(page, size), tipoUsuario, setor);
+                PageRequest.of(page, size), tipoUsuario, setor, status);
     }
 
-    @PostMapping("/alterar-status")
-    public ApiResponse<Void> alterarStatus(@RequestBody EmailDTO emailDTO) {
-        return usuarioService.alternarStatusUsuarioPorEmail(emailDTO);
+    @PutMapping("/alterar-status")
+    public ApiResponse<Void> alterarStatus(@RequestBody AlterarStatusDTO alterarStatusDTO) {
+        return usuarioService.alternarStatusUsuarioPorEmail(alterarStatusDTO);
     }
 
     @PutMapping("/{id}")
@@ -98,7 +102,7 @@ public class UsuarioController {
 
     @GetMapping("/estatisticas/tipos")
     @PreAuthorize("hasRole('admin')")
-    public ApiResponse<List<TipoUsuarioStatsDTO>> buscarEstatisticasTipoUsuario() {
+    public ApiResponse<TipoUsuarioStatsResponseDTO> buscarEstatisticasTipoUsuario() {
         return usuarioService.buscarEstatisticasTipoUsuario();
     }
 
@@ -106,5 +110,10 @@ public class UsuarioController {
     @PreAuthorize("hasRole('admin')")
     public ApiResponse<List<String>> buscarSetoresDistintos() {
         return usuarioService.buscarSetoresDistintos();
+    }
+
+    @PutMapping("/atualizar-usuario/{id}")
+    public ApiResponse<UsuarioResponseDTO> atualizarUsuario(@PathVariable String id, @RequestBody UsuarioUpdateDTO usuarioUpdateDTO ){
+        return usuarioService.atualizarUsuario(id, usuarioUpdateDTO);
     }
 }

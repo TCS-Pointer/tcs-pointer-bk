@@ -434,4 +434,13 @@ public class UsuarioService {
             return apiResponseUtil.error("Erro ao atualizar usuário: " + e.getMessage(), 400);
         }
     }
+
+    @Transactional(readOnly = true)
+    public  ApiResponse<List<UsuarioResponseDTO>> buscarUsuariosPorSetor(String keycloakId){
+        Usuario usuario = usuarioRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new UsuarioNaoEncontradoException(keycloakId));
+
+        List<Usuario> usuarios = usuarioRepository.findBySetor(usuario.getSetor(), keycloakId);
+        return apiResponseUtil.mapList(usuarios, UsuarioResponseDTO.class, "Usuários encontrados com sucesso");
+    }
 }

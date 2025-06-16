@@ -21,6 +21,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>, JpaSpec
     Optional<Usuario> findByEmail(String email);
     boolean existsByEmail(String email);
 
+    @Query("SELECT u FROM Usuario u WHERE u.setor = :setor AND u.keycloakId != :keycloakId")
+    List<Usuario> findBySetor(String setor, String keycloakId);
+
     @Query("SELECT u FROM Usuario u WHERE " +
            "(:tipoUsuario IS NULL OR u.tipoUsuario = :tipoUsuario) AND " +
            "(:setor IS NULL OR u.setor = :setor) AND " +

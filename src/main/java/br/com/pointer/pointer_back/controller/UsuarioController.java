@@ -116,4 +116,9 @@ public class UsuarioController {
     public ApiResponse<UsuarioResponseDTO> atualizarUsuario(@PathVariable String id, @RequestBody UsuarioUpdateDTO usuarioUpdateDTO ){
         return usuarioService.atualizarUsuario(id, usuarioUpdateDTO);
     }
+
+    @GetMapping("/setor/{keycloakId}")
+    public ApiResponse<List<UsuarioResponseDTO>> buscarUsuariosPorSetor(@PathVariable String keycloakId) {
+        return usuarioService.buscarUsuariosPorSetor(keycloakId);
+    }
 }

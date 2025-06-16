@@ -10,10 +10,12 @@ public class pdiDTO {
     private Long id;
     private String titulo;
     private String descricao;
+    private Long idDestinatario;
+    private UsuarioResponseDTO destinatario;
+    private StatusPDI status;
     private LocalDate dataInicio;
     private LocalDate dataFim;
     private Long idUsuario;
-    private Long idDestinatario;
-    private StatusPDI status;
+    private UsuarioResponseDTO usuario;
     private List<MarcoPDIDTO> marcos;
 }

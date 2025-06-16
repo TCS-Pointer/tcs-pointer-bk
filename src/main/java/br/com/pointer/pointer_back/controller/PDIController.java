@@ -22,17 +22,6 @@ public class PDIController {
     @Autowired
     private PDIService pdiService;
 
-    // feito: Verificar se todos os marcos estão CONCLUIDOS, PDI será CONCLUIDO
-    // TODO: Get PDI por ID Usuario (criador) (request param)
-    // TODO: Get PDI por ID Destinatário (request param)
-    // feito: Trocar destinatario para idDestinatario
-    // feito: Validação data inicial < data final PDI e Marcos
-    // feito: Validar se todos os marcos estão CONCLUIDOS, PDI será CONCLUIDO
-    // feito: Validar duração mínima de 1 mês
-
-    // feito: Rota get todas os PDI (somente admin)
-    // feito: Rota get PDI por ID usuario (rota do gestor e admin)
-    // feito: Rota get PDI por ID destinatário (rota do usuario)
     @GetMapping("/destinatario/{idDestinatario}")
     @PreAuthorize("hasRole('usuario')")
     public ResponseEntity<ApiResponse<List<pdiDTO>>> buscarPorDestinatario(@PathVariable Long idDestinatario) {
@@ -47,18 +36,19 @@ public class PDIController {
         return ResponseEntity.ok(new ApiResponse<List<pdiDTO>>().ok(pdis, "PDIs do usuário listados com sucesso"));
     }
 
+    @GetMapping("/com-destinatario")
+    @PreAuthorize("hasRole('admin')")
+    public ResponseEntity<ApiResponse<List<pdiDTO>>> listarTodosComDestinatario() {
+        List<pdiDTO> pdis = pdiService.listarTodosComDestinatario();
+        return ResponseEntity
+                .ok(new ApiResponse<List<pdiDTO>>().ok(pdis, "PDIs com destinatário listados com sucesso"));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('admin') or hasRole('gestor')")
     public ResponseEntity<ApiResponse<pdiDTO>> buscarPorId(@PathVariable Long id) {
         pdiDTO pdi = pdiService.buscarPorId(id);
         return ResponseEntity.ok(new ApiResponse<pdiDTO>().ok(pdi, "PDI encontrado com sucesso"));
-    }
-
-    @GetMapping
-    @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<ApiResponse<List<pdiDTO>>> listarTodos() {
-        List<pdiDTO> pdis = pdiService.listarTodos();
-        return ResponseEntity.ok(new ApiResponse<List<pdiDTO>>().ok(pdis, "PDIs listados com sucesso"));
     }
 
     @PostMapping
@@ -83,7 +73,7 @@ public class PDIController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('usuario') or hasRole('admin')")
+    @PreAuthorize("hasRole('usuario') or hasRole('admin') or hasRole('gestor')")
     public ResponseEntity<ApiResponse<pdiDTO>> atualizarStatus(@PathVariable Long id,
             @RequestBody AtualizarStatusPDIDTO dto) {
         try {
@@ -94,5 +84,12 @@ public class PDIController {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<pdiDTO>().badRequest("Erro ao atualizar status do PDI: " + e.getMessage()));
         }
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('admin')")
+    public ResponseEntity<ApiResponse<List<pdiDTO>>> listarTodos() {
+        List<pdiDTO> pdis = pdiService.listarTodos();
+        return ResponseEntity.ok(new ApiResponse<List<pdiDTO>>().ok(pdis, "PDIs listados com sucesso"));
     }
 }

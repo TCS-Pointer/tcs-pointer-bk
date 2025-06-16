@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class UsuarioUpdateDTO {
+    private String nome;
     private String setor;
     private String cargo;
     private String tipoUsuario;

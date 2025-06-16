@@ -8,6 +8,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import br.com.pointer.pointer_back.dto.*;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -25,13 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import br.com.pointer.pointer_back.ApiResponse;
-import br.com.pointer.pointer_back.dto.AlterarStatusDTO;
-import br.com.pointer.pointer_back.dto.KeycloakResponseDTO;
-import br.com.pointer.pointer_back.dto.TipoUsuarioStatsDTO;
-import br.com.pointer.pointer_back.dto.UpdatePasswordDTO;
-import br.com.pointer.pointer_back.dto.UsuarioDTO;
-import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
-import br.com.pointer.pointer_back.dto.UsuarioUpdateDTO;
 import br.com.pointer.pointer_back.exception.KeycloakException;
 import br.com.pointer.pointer_back.exception.SetorCargoInvalidoException;
 import br.com.pointer.pointer_back.exception.UsuarioNaoEncontradoException;
@@ -191,7 +185,7 @@ public class UsuarioService {
                     usuario.setStatus(StatusUsuario.ATIVO);
                     logger.info("Usuário ativado: {}", usuario.getEmail());
                     //ususario ativado por tal email
-                    
+
                 }
 
                 usuarioRepository.save(usuario);
@@ -390,7 +384,7 @@ public class UsuarioService {
             Long totalGeral = stats.stream()
                 .mapToLong(TipoUsuarioStatsDTO::getTotal)
                 .sum();
-            
+
             TipoUsuarioStatsResponseDTO response = new TipoUsuarioStatsResponseDTO(stats, totalGeral);
             return apiResponseUtil.success(response, "Estatísticas dos tipos de usuários obtidas com sucesso");
         } catch (Exception e) {

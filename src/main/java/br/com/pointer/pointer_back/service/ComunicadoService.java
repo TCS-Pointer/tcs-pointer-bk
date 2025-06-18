@@ -4,19 +4,23 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import br.com.pointer.pointer_back.dto.ComunicadoDTO;
+import br.com.pointer.pointer_back.exception.ComunicadoNaoEncontradoException;
 import br.com.pointer.pointer_back.mapper.ComunicadoMapper;
 import br.com.pointer.pointer_back.model.Comunicado;
 import br.com.pointer.pointer_back.repository.ComunicadoRepository;
-import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class ComunicadoService {
+    private static final Logger logger = LoggerFactory.getLogger(ComunicadoService.class);
 
     @Autowired
     private ComunicadoRepository comunicadoRepository;
@@ -24,123 +28,201 @@ public class ComunicadoService {
     @Autowired
     private ComunicadoMapper comunicadoMapper;
 
+    @Transactional(readOnly = true)
     public List<ComunicadoDTO> listarTodos() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
-        
-        if (isAdmin) {
-            return comunicadoRepository.findAll().stream()
+        try {
+            logger.info("Iniciando listagem de todos os comunicados");
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
+            
+            List<ComunicadoDTO> comunicados;
+            if (isAdmin) {
+                comunicados = comunicadoRepository.findAll().stream()
+                        .map(comunicadoMapper::toDTO)
+                        .collect(Collectors.toList());
+            } else {
+                String setor = auth.getName();
+                boolean isGestor = auth.getAuthorities().stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_gestor"));
+
+                comunicados = comunicadoRepository.findBySetor(setor).stream()
+                        .filter(comunicado -> !comunicado.isApenasGestores() || isGestor)
+                        .map(comunicadoMapper::toDTO)
+                        .collect(Collectors.toList());
+            }
+            logger.info("Comunicados listados com sucesso: {}", comunicados.size());
+            return comunicados;
+        } catch (Exception e) {
+            logger.error("Erro ao listar comunicados: ", e);
+            throw new RuntimeException("Erro ao listar comunicados: " + e.getMessage());
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<ComunicadoDTO> listarPorSetor(String setor) {
+        try {
+            logger.info("Iniciando listagem de comunicados do setor: {}", setor);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
+            boolean isGestor = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_gestor"));
+            String setorUsuario = auth.getName();
+
+            if (!isAdmin && !setor.equals(setorUsuario)) {
+                logger.error("Tentativa de acesso não autorizado ao setor: {}", setor);
+                throw new SecurityException("Usuário não tem permissão para acessar comunicados de outro setor");
+            }
+
+            List<ComunicadoDTO> comunicados = comunicadoRepository.findBySetor(setor).stream()
+                    .filter(comunicado -> !comunicado.isApenasGestores() || isGestor)
                     .map(comunicadoMapper::toDTO)
                     .collect(Collectors.toList());
+            
+            logger.info("Comunicados do setor {} listados com sucesso: {}", setor, comunicados.size());
+            return comunicados;
+        } catch (SecurityException e) {
+            logger.error("Erro de segurança ao listar comunicados: ", e);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Erro ao listar comunicados do setor: ", e);
+            throw new RuntimeException("Erro ao listar comunicados do setor: " + e.getMessage());
         }
-
-        String setor = auth.getName(); // Assumindo que o setor está no nome do usuário
-        boolean isGestor = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_gestor"));
-
-        return comunicadoRepository.findBySetor(setor).stream()
-                .filter(comunicado -> !comunicado.isApenasGestores() || isGestor)
-                .map(comunicadoMapper::toDTO)
-                .collect(Collectors.toList());
     }
 
-    public List<ComunicadoDTO> listarPorSetor(String setor) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
-        boolean isGestor = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_gestor"));
-        String setorUsuario = auth.getName();
-
-        if (!isAdmin && !setor.equals(setorUsuario)) {
-            throw new SecurityException("Usuário não tem permissão para acessar comunicados de outro setor");
-        }
-
-        return comunicadoRepository.findBySetor(setor).stream()
-                .filter(comunicado -> !comunicado.isApenasGestores() || isGestor)
-                .map(comunicadoMapper::toDTO)
-                .collect(Collectors.toList());
-    }
-
+    @Transactional(readOnly = true)
     public ComunicadoDTO buscarPorId(Long id) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
-        boolean isGestor = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_gestor"));
-        String setorUsuario = auth.getName();
+        try {
+            logger.info("Buscando comunicado com ID: {}", id);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
+            boolean isGestor = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_gestor"));
+            String setorUsuario = auth.getName();
 
-        Optional<Comunicado> comunicado = comunicadoRepository.findById(id);
-        if (comunicado.isEmpty()) {
-            throw new EntityNotFoundException("Comunicado não encontrado com ID: " + id);
+            Comunicado comunicado = comunicadoRepository.findById(id)
+                    .orElseThrow(() -> new ComunicadoNaoEncontradoException("Comunicado não encontrado com ID: " + id));
+
+            if (!isAdmin && !comunicado.getSetor().equals(setorUsuario)) {
+                logger.error("Tentativa de acesso não autorizado ao comunicado: {}", id);
+                throw new SecurityException("Usuário não tem permissão para acessar comunicados de outro setor");
+            }
+
+            if (comunicado.isApenasGestores() && !isGestor && !isAdmin) {
+                logger.error("Tentativa de acesso não autorizado ao comunicado restrito: {}", id);
+                throw new SecurityException("Apenas gestores podem visualizar este comunicado");
+            }
+
+            ComunicadoDTO dto = comunicadoMapper.toDTO(comunicado);
+            logger.info("Comunicado encontrado com sucesso: {}", dto);
+            return dto;
+        } catch (ComunicadoNaoEncontradoException | SecurityException e) {
+            logger.error("Erro ao buscar comunicado: ", e);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Erro ao buscar comunicado: ", e);
+            throw new RuntimeException("Erro ao buscar comunicado: " + e.getMessage());
         }
-
-        Comunicado comunicadoEncontrado = comunicado.get();
-        if (!isAdmin && !comunicadoEncontrado.getSetor().equals(setorUsuario)) {
-            throw new SecurityException("Usuário não tem permissão para acessar comunicados de outro setor");
-        }
-
-        if (comunicadoEncontrado.isApenasGestores() && !isGestor && !isAdmin) {
-            throw new SecurityException("Apenas gestores podem visualizar este comunicado");
-        }
-
-        return comunicadoMapper.toDTO(comunicadoEncontrado);
     }
 
+    @Transactional
     public ComunicadoDTO criar(ComunicadoDTO comunicadoDTO) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
-        String setorUsuario = auth.getName();
+        try {
+            logger.info("Iniciando criação de comunicado: {}", comunicadoDTO);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
+            String setorUsuario = auth.getName();
 
-        if (!isAdmin && !comunicadoDTO.getSetor().equals(setorUsuario)) {
-            throw new SecurityException("Usuário não tem permissão para criar comunicados para outro setor");
+            if (!isAdmin && !comunicadoDTO.getSetor().equals(setorUsuario)) {
+                logger.error("Tentativa de criação não autorizada para o setor: {}", comunicadoDTO.getSetor());
+                throw new SecurityException("Usuário não tem permissão para criar comunicados para outro setor");
+            }
+
+            Comunicado comunicado = comunicadoMapper.toEntity(comunicadoDTO);
+            Comunicado salvo = comunicadoRepository.save(comunicado);
+            ComunicadoDTO dto = comunicadoMapper.toDTO(salvo);
+            
+            logger.info("Comunicado criado com sucesso: {}", dto);
+            return dto;
+        } catch (SecurityException e) {
+            logger.error("Erro de segurança ao criar comunicado: ", e);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Erro ao criar comunicado: ", e);
+            throw new RuntimeException("Erro ao criar comunicado: " + e.getMessage());
         }
-
-        Comunicado comunicado = comunicadoMapper.toEntity(comunicadoDTO);
-        return comunicadoMapper.toDTO(comunicadoRepository.save(comunicado));
     }
 
+    @Transactional
     public ComunicadoDTO atualizar(Long id, ComunicadoDTO comunicadoDTO) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
-        String setorUsuario = auth.getName();
+        try {
+            logger.info("Iniciando atualização do comunicado {}: {}", id, comunicadoDTO);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
+            String setorUsuario = auth.getName();
 
-        Comunicado comunicadoExistente = comunicadoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado com ID: " + id));
+            Comunicado comunicadoExistente = comunicadoRepository.findById(id)
+                    .orElseThrow(() -> new ComunicadoNaoEncontradoException("Comunicado não encontrado com ID: " + id));
 
-        if (!isAdmin && !comunicadoExistente.getSetor().equals(setorUsuario)) {
-            throw new SecurityException("Usuário não tem permissão para atualizar comunicados de outro setor");
+            if (!isAdmin && !comunicadoExistente.getSetor().equals(setorUsuario)) {
+                logger.error("Tentativa de atualização não autorizada do comunicado: {}", id);
+                throw new SecurityException("Usuário não tem permissão para atualizar comunicados de outro setor");
+            }
+
+            if (!isAdmin && !comunicadoDTO.getSetor().equals(setorUsuario)) {
+                logger.error("Tentativa de mover comunicado para outro setor: {}", comunicadoDTO.getSetor());
+                throw new SecurityException("Usuário não tem permissão para mover comunicado para outro setor");
+            }
+
+            Comunicado comunicadoAtualizado = comunicadoMapper.toEntity(comunicadoDTO);
+            comunicadoExistente.setTitulo(comunicadoAtualizado.getTitulo());
+            comunicadoExistente.setDescricao(comunicadoAtualizado.getDescricao());
+            comunicadoExistente.setSetor(comunicadoAtualizado.getSetor());
+            comunicadoExistente.setApenasGestores(comunicadoAtualizado.isApenasGestores());
+            
+            Comunicado salvo = comunicadoRepository.save(comunicadoExistente);
+            ComunicadoDTO dto = comunicadoMapper.toDTO(salvo);
+            
+            logger.info("Comunicado atualizado com sucesso: {}", dto);
+            return dto;
+        } catch (ComunicadoNaoEncontradoException | SecurityException e) {
+            logger.error("Erro ao atualizar comunicado: ", e);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Erro ao atualizar comunicado: ", e);
+            throw new RuntimeException("Erro ao atualizar comunicado: " + e.getMessage());
         }
-
-        if (!isAdmin && !comunicadoDTO.getSetor().equals(setorUsuario)) {
-            throw new SecurityException("Usuário não tem permissão para mover comunicado para outro setor");
-        }
-
-        Comunicado comunicadoAtualizado = comunicadoMapper.toEntity(comunicadoDTO);
-        comunicadoExistente.setTitulo(comunicadoAtualizado.getTitulo());
-        comunicadoExistente.setDescricao(comunicadoAtualizado.getDescricao());
-        comunicadoExistente.setSetor(comunicadoAtualizado.getSetor());
-        comunicadoExistente.setApenasGestores(comunicadoAtualizado.isApenasGestores());
-        
-        return comunicadoMapper.toDTO(comunicadoRepository.save(comunicadoExistente));
     }
 
+    @Transactional
     public void deletar(Long id) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
-        String setorUsuario = auth.getName();
+        try {
+            logger.info("Iniciando deleção do comunicado: {}", id);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
+            String setorUsuario = auth.getName();
 
-        Comunicado comunicado = comunicadoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado com ID: " + id));
+            Comunicado comunicado = comunicadoRepository.findById(id)
+                    .orElseThrow(() -> new ComunicadoNaoEncontradoException("Comunicado não encontrado com ID: " + id));
 
-        if (!isAdmin && !comunicado.getSetor().equals(setorUsuario)) {
-            throw new SecurityException("Usuário não tem permissão para deletar comunicados de outro setor");
+            if (!isAdmin && !comunicado.getSetor().equals(setorUsuario)) {
+                logger.error("Tentativa de deleção não autorizada do comunicado: {}", id);
+                throw new SecurityException("Usuário não tem permissão para deletar comunicados de outro setor");
+            }
+
+            comunicadoRepository.deleteById(id);
+            logger.info("Comunicado deletado com sucesso: {}", id);
+        } catch (ComunicadoNaoEncontradoException | SecurityException e) {
+            logger.error("Erro ao deletar comunicado: ", e);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Erro ao deletar comunicado: ", e);
+            throw new RuntimeException("Erro ao deletar comunicado: " + e.getMessage());
         }
-
-        comunicadoRepository.deleteById(id);
     }
 }

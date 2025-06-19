@@ -10,17 +10,15 @@ import br.com.pointer.pointer_back.enums.StatusMarcoPDI;
 import br.com.pointer.pointer_back.model.MarcoPDI;
 import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.util.ApiResponseUtil;
-
+import br.com.pointer.pointer_back.model.Usuario;
+import br.com.pointer.pointer_back.repository.UsuarioRepository;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
-import java.util.stream.Collectors;
-import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
 @Service
@@ -37,23 +35,14 @@ public class PDIService {
     @Autowired
     private final ApiResponseUtil apiResponseUtil;
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
     public PDIService(PDIRepository pdiRepository, ModelMapper modelMapper, ApiResponseUtil apiResponseUtil) {
         this.pdiRepository = pdiRepository;
         this.modelMapper = modelMapper;
         this.apiResponseUtil = apiResponseUtil;
     }
-
-    // TODO: Verificar se todos os marcos estão CONCLUIDOS, PDI será CONCLUIDO
-    // TODO: Get PDI por ID Usuario (criador) (request param)
-    // TODO: Get PDI por ID Destinatário (request param)
-    // TODO: Trocar destinatario para idDestinatario
-    // TODO: Validação data inicial < data final PDI e Marcos
-    // TODO: Validar se todos os marcos estão CONCLUIDOS, PDI será CONCLUIDO
-    // TODO: Validar duração mínima de 1 mês
-
-    // TODO: Rota get todas os PDI (somente admin)
-    // TODO: Rota get PDI por ID usuario (rota do gestor e admin)
-    // TODO: Rota get PDI por ID destinatário (rota do usuario)
 
     @Transactional(readOnly = true)
     public ApiResponse<List<pdiDTO>> buscarPorUsuario(Long idUsuario) {
@@ -126,6 +115,23 @@ public class PDIService {
 
             PDI pdi = modelMapper.map(dto, PDI.class);
             logger.info("PDI convertido para entidade: {}", pdi);
+
+            // Associar destinatário já existente ao PDI
+            if (dto.getIdDestinatario() == null) {
+                logger.error("ID do destinatário é nulo");
+                return apiResponseUtil.error("ID do destinatário é obrigatório", 400);
+            }
+            Usuario destinatario = usuarioRepository.findById(dto.getIdDestinatario())
+                    .orElseThrow(() -> new RuntimeException(
+                            "Destinatário não encontrado com ID: " + dto.getIdDestinatario()));
+            pdi.setDestinatario(destinatario);
+
+            // Garantir que cada marco aponte para o PDI correto
+            if (pdi.getMarcos() != null) {
+                for (MarcoPDI marco : pdi.getMarcos()) {
+                    marco.setPdi(pdi);
+                }
+            }
 
             validarStatusPDI(pdi);
 

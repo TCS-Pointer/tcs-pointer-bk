@@ -108,6 +108,37 @@ public class ComunicadoService {
     }
 
     @Transactional(readOnly = true)
+    public List<ComunicadoDTO> listarApenasGestores(String keycloakId) {
+        try {
+            logger.info("Iniciando listagem de comunicados de gestores para o usuário com keycloakId: {}", keycloakId);
+
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByKeycloakId(keycloakId);
+            if (usuarioOpt.isEmpty()) {
+                throw new SecurityException("Usuário não encontrado");
+            }
+
+            Usuario usuario = usuarioOpt.get();
+            boolean isAdmin = usuario.getTipoUsuario() != null && usuario.getTipoUsuario().equalsIgnoreCase("admin");
+
+            List<Comunicado> comunicados;
+            if (isAdmin) {
+                comunicados = comunicadoRepository.findByApenasGestores(true);
+            } else {
+                String setor = usuario.getSetor();
+                comunicados = comunicadoRepository.findBySetorAndApenasGestores(setor, true);
+            }
+
+            return comunicados.stream()
+                    .map(comunicadoMapper::toDTO)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            logger.error("Erro ao listar comunicados de gestores: ", e);
+            throw new RuntimeException("Erro ao listar comunicados de gestores: " + e.getMessage());
+        }
+    }
+
+    @Transactional(readOnly = true)
     public ComunicadoDTO buscarPorId(Long id, String keycloakId) {
         try {
             logger.info("Buscando comunicado com ID: {} para o usuário com keycloakId: {}", id, keycloakId);

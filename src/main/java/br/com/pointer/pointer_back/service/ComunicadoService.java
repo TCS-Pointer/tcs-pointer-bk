@@ -17,6 +17,8 @@ import br.com.pointer.pointer_back.exception.ComunicadoNaoEncontradoException;
 import br.com.pointer.pointer_back.mapper.ComunicadoMapper;
 import br.com.pointer.pointer_back.model.Comunicado;
 import br.com.pointer.pointer_back.repository.ComunicadoRepository;
+import br.com.pointer.pointer_back.repository.UsuarioRepository;
+import br.com.pointer.pointer_back.model.Usuario;
 
 @Service
 public class ComunicadoService {
@@ -28,24 +30,38 @@ public class ComunicadoService {
     @Autowired
     private ComunicadoMapper comunicadoMapper;
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    private String getSetorUsuarioAutenticado() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
+        if (usuarioOpt.isPresent()) {
+            return usuarioOpt.get().getSetor();
+        }
+        // fallback para evitar null pointer
+        return null;
+    }
+
     @Transactional(readOnly = true)
-    public List<ComunicadoDTO> listarTodos() {
+    public List<ComunicadoDTO> listarTodos(String keycloakId) {
         try {
-            logger.info("Iniciando listagem de todos os comunicados");
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            boolean isAdmin = auth.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
-            
+            logger.info("Iniciando listagem de todos os comunicados para o usuário com keycloakId: {}", keycloakId);
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByKeycloakId(keycloakId);
+            if (usuarioOpt.isEmpty()) {
+                throw new SecurityException("Usuário não encontrado");
+            }
+            Usuario usuario = usuarioOpt.get();
+            boolean isAdmin = usuario.getTipoUsuario() != null && usuario.getTipoUsuario().equalsIgnoreCase("admin");
+            boolean isGestor = usuario.getTipoUsuario() != null && usuario.getTipoUsuario().equalsIgnoreCase("gestor");
+            String setor = usuario.getSetor();
             List<ComunicadoDTO> comunicados;
             if (isAdmin) {
                 comunicados = comunicadoRepository.findAll().stream()
                         .map(comunicadoMapper::toDTO)
                         .collect(Collectors.toList());
             } else {
-                String setor = auth.getName();
-                boolean isGestor = auth.getAuthorities().stream()
-                        .anyMatch(a -> a.getAuthority().equals("ROLE_gestor"));
-
                 comunicados = comunicadoRepository.findBySetor(setor).stream()
                         .filter(comunicado -> !comunicado.isApenasGestores() || isGestor)
                         .map(comunicadoMapper::toDTO)
@@ -68,7 +84,7 @@ public class ComunicadoService {
                     .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
             boolean isGestor = auth.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_gestor"));
-            String setorUsuario = auth.getName();
+            String setorUsuario = getSetorUsuarioAutenticado();
 
             if (!isAdmin && !setor.equals(setorUsuario)) {
                 logger.error("Tentativa de acesso não autorizado ao setor: {}", setor);
@@ -92,29 +108,27 @@ public class ComunicadoService {
     }
 
     @Transactional(readOnly = true)
-    public ComunicadoDTO buscarPorId(Long id) {
+    public ComunicadoDTO buscarPorId(Long id, String keycloakId) {
         try {
-            logger.info("Buscando comunicado com ID: {}", id);
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            boolean isAdmin = auth.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
-            boolean isGestor = auth.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_gestor"));
-            String setorUsuario = auth.getName();
-
+            logger.info("Buscando comunicado com ID: {} para o usuário com keycloakId: {}", id, keycloakId);
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByKeycloakId(keycloakId);
+            if (usuarioOpt.isEmpty()) {
+                throw new SecurityException("Usuário não encontrado");
+            }
+            Usuario usuario = usuarioOpt.get();
+            boolean isAdmin = usuario.getTipoUsuario() != null && usuario.getTipoUsuario().equalsIgnoreCase("admin");
+            boolean isGestor = usuario.getTipoUsuario() != null && usuario.getTipoUsuario().equalsIgnoreCase("gestor");
+            String setorUsuario = usuario.getSetor();
             Comunicado comunicado = comunicadoRepository.findById(id)
                     .orElseThrow(() -> new ComunicadoNaoEncontradoException("Comunicado não encontrado com ID: " + id));
-
-            if (!isAdmin && !comunicado.getSetor().equals(setorUsuario)) {
+            if (!isAdmin && !comunicado.getSetor().equalsIgnoreCase(setorUsuario)) {
                 logger.error("Tentativa de acesso não autorizado ao comunicado: {}", id);
                 throw new SecurityException("Usuário não tem permissão para acessar comunicados de outro setor");
             }
-
             if (comunicado.isApenasGestores() && !isGestor && !isAdmin) {
                 logger.error("Tentativa de acesso não autorizado ao comunicado restrito: {}", id);
                 throw new SecurityException("Apenas gestores podem visualizar este comunicado");
             }
-
             ComunicadoDTO dto = comunicadoMapper.toDTO(comunicado);
             logger.info("Comunicado encontrado com sucesso: {}", dto);
             return dto;
@@ -134,7 +148,7 @@ public class ComunicadoService {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             boolean isAdmin = auth.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
-            String setorUsuario = auth.getName();
+            String setorUsuario = getSetorUsuarioAutenticado();
 
             if (!isAdmin && !comunicadoDTO.getSetor().equals(setorUsuario)) {
                 logger.error("Tentativa de criação não autorizada para o setor: {}", comunicadoDTO.getSetor());
@@ -163,7 +177,7 @@ public class ComunicadoService {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             boolean isAdmin = auth.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
-            String setorUsuario = auth.getName();
+            String setorUsuario = getSetorUsuarioAutenticado();
 
             Comunicado comunicadoExistente = comunicadoRepository.findById(id)
                     .orElseThrow(() -> new ComunicadoNaoEncontradoException("Comunicado não encontrado com ID: " + id));
@@ -205,7 +219,7 @@ public class ComunicadoService {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             boolean isAdmin = auth.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
-            String setorUsuario = auth.getName();
+            String setorUsuario = getSetorUsuarioAutenticado();
 
             Comunicado comunicado = comunicadoRepository.findById(id)
                     .orElseThrow(() -> new ComunicadoNaoEncontradoException("Comunicado não encontrado com ID: " + id));

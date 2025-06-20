@@ -19,8 +19,8 @@ public class ComunicadoController {
 
     @GetMapping("/listar-comunicados")
     @PreAuthorize("hasRole('colaborador') or hasRole('admin') or hasRole('gestor')")
-    public ResponseEntity<ApiResponse<List<ComunicadoDTO>>> listarTodos() {
-        List<ComunicadoDTO> comunicados = comunicadoService.listarTodos();
+    public ResponseEntity<ApiResponse<List<ComunicadoDTO>>> listarTodos(@RequestParam(name = "keycloakId", required = true) String keycloakId) {
+        List<ComunicadoDTO> comunicados = comunicadoService.listarTodos(keycloakId);
         return ResponseEntity.ok(new ApiResponse<List<ComunicadoDTO>>().ok(comunicados, "Comunicados listados com sucesso"));
     }
 
@@ -33,8 +33,8 @@ public class ComunicadoController {
 
     @GetMapping("/buscar-comunicado/{id}")
     @PreAuthorize("hasRole('colaborador') or hasRole('admin') or hasRole('gestor')")
-    public ResponseEntity<ApiResponse<ComunicadoDTO>> buscarPorId(@PathVariable Long id) {
-        ComunicadoDTO comunicado = comunicadoService.buscarPorId(id);
+    public ResponseEntity<ApiResponse<ComunicadoDTO>> buscarPorId(@PathVariable Long id, @RequestParam(name = "keycloakId", required = true) String keycloakId) {
+        ComunicadoDTO comunicado = comunicadoService.buscarPorId(id, keycloakId);
         return ResponseEntity.ok(new ApiResponse<ComunicadoDTO>().ok(comunicado, "Comunicado encontrado com sucesso"));
     }
 

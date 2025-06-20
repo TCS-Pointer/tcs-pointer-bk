@@ -58,4 +58,15 @@ public class ComunicadoController {
         comunicadoService.deletar(id);
         return ResponseEntity.ok(new ApiResponse<Void>().ok(null, "Comunicado deletado com sucesso"));
     }
+
+    /**
+     * Lista todos os comunicados destinados apenas a gestores.
+     * @param keycloakId id do usuário no Keycloak (deve ser gestor ou admin)
+     */
+    @GetMapping("/listar-apenas-gestores")
+    @PreAuthorize("hasRole('gestor') or hasRole('admin')")
+    public ResponseEntity<ApiResponse<List<ComunicadoDTO>>> listarApenasGestores(@RequestParam(name = "keycloakId", required = true) String keycloakId) {
+        List<ComunicadoDTO> comunicados = comunicadoService.listarApenasGestores(keycloakId);
+        return ResponseEntity.ok(new ApiResponse<List<ComunicadoDTO>>().ok(comunicados, "Comunicados de gestores listados com sucesso"));
+    }
 }

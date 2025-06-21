@@ -1,6 +1,7 @@
 package br.com.pointer.pointer_back.dto;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
@@ -14,7 +15,7 @@ public class ComunicadoDTO {
     private Long id;
     private String titulo;
     private String descricao;
-    private String setor;
+    private Set<String> setores;
     private boolean apenasGestores;
     
     @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")

@@ -8,7 +8,7 @@ import java.util.List;
 
 @Repository
 public interface ComunicadoRepository extends JpaRepository<Comunicado, Long> {
-    List<Comunicado> findBySetor(String setor);
+    List<Comunicado> findBySetoresContaining(String setor);
     List<Comunicado> findByApenasGestores(boolean apenasGestores);
-    List<Comunicado> findBySetorAndApenasGestores(String setor, boolean apenasGestores);
+    List<Comunicado> findBySetoresContainingAndApenasGestores(String setor, boolean apenasGestores);
 }

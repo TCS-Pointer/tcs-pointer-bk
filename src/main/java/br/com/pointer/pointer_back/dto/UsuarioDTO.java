@@ -8,8 +8,9 @@ public class UsuarioDTO {
     private String nome;
     private String email;
     private String senha;
-    private StatusUsuario status;
-    private String cargo;
     private String setor;
+    private String cargo;
     private String tipoUsuario;
-} 
+    private String keycloakId;
+    private StatusUsuario status;
+}

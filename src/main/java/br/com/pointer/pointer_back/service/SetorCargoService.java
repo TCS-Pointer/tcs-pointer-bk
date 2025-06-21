@@ -10,13 +10,18 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.dto.SetorCargoDTO;
 import br.com.pointer.pointer_back.exception.SetorCargoInvalidoException;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class SetorCargoService {
+
+    private static final Logger logger = LoggerFactory.getLogger(SetorCargoService.class);
 
     @Getter
     private SetorCargoDTO dados;
@@ -29,6 +34,15 @@ public class SetorCargoService {
             dados = mapper.readValue(is, SetorCargoDTO.class);
         } catch (IOException e) {
             throw new RuntimeException("Erro ao carregar dados.json", e);
+        }
+    }
+
+    public ApiResponse<SetorCargoDTO> listarSetoresECargos() {
+        try {
+            return ApiResponse.success(dados, "Setores e cargos listados com sucesso");
+        } catch (Exception e) {
+            logger.error("Erro ao listar setores e cargos: ", e);
+            return ApiResponse.badRequest("Erro ao listar setores e cargos: " + e.getMessage());
         }
     }
 

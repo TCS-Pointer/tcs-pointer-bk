@@ -16,14 +16,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.dto.AlterarStatusDTO;
+import br.com.pointer.pointer_back.dto.EmailCode;
 import br.com.pointer.pointer_back.dto.EmailDTO;
+import br.com.pointer.pointer_back.dto.PrimeiroAcessoDTO;
 import br.com.pointer.pointer_back.dto.TipoUsuarioStatsResponseDTO;
 import br.com.pointer.pointer_back.dto.UpdatePasswordDTO;
 import br.com.pointer.pointer_back.dto.UsuarioDTO;
 import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
 import br.com.pointer.pointer_back.dto.UsuarioUpdateDTO;
 import br.com.pointer.pointer_back.service.UsuarioService;
-import br.com.pointer.pointer_back.util.ApiResponseUtil;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -32,7 +33,6 @@ import lombok.RequiredArgsConstructor;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
-    private final ApiResponseUtil apiResponseUtil;
 
     @PostMapping
     @PreAuthorize("hasRole('admin')")
@@ -40,7 +40,18 @@ public class UsuarioController {
         return usuarioService.criarUsuario(usuarioDTO);
     }
 
+    @PostMapping("/primeiro-acesso")
+    public ApiResponse<Void> definirSenhaPrimeiroAcesso(@RequestBody PrimeiroAcessoDTO primeiroAcessoDTO) {
+        return usuarioService.definirSenhaPrimeiroAcesso(primeiroAcessoDTO);
+    }
+
+    @PostMapping("/primeiro-acesso/reenviar")
+    public ApiResponse<Void> reenviarEmailPrimeiroAcesso(@RequestBody EmailDTO emailDTO) {
+        return usuarioService.reenviarEmailPrimeiroAcesso(emailDTO.getEmail());
+    }
+
     @GetMapping
+    @PreAuthorize("hasRole('admin')")
     public ApiResponse<Page<UsuarioResponseDTO>> listarUsuarios(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -52,15 +63,17 @@ public class UsuarioController {
     }
 
     @PutMapping("/alterar-status")
+    @PreAuthorize("hasRole('admin')")
     public ApiResponse<Void> alterarStatus(@RequestBody AlterarStatusDTO alterarStatusDTO) {
         return usuarioService.alternarStatusUsuarioPorEmail(alterarStatusDTO);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{keycloakId}")
+    @PreAuthorize("hasRole('admin')")
     public ApiResponse<UsuarioResponseDTO> atualizarUsuario(
-            @PathVariable String id,
-            @RequestBody UsuarioDTO usuarioDTO) {
-        return usuarioService.atualizarUsuarioComSincronizacaoKeycloak(usuarioDTO, id);
+            @PathVariable String keycloakId,
+            @RequestBody UsuarioUpdateDTO usuarioUpdateDTO) {
+        return usuarioService.atualizarUsuario(usuarioUpdateDTO, keycloakId);
     }
 
     @PostMapping("/atualizar-senha")
@@ -70,17 +83,12 @@ public class UsuarioController {
 
     @PostMapping("/esqueceu-senha")
     public ApiResponse<Void> esqueceuSenha(@RequestBody EmailDTO emailDTO) {
-        if (usuarioService.existsByEmail(emailDTO.getEmail())) {
-            return usuarioService.resetarSenhaComEmailEKeycloak(emailDTO.getEmail());
-        }
-        return apiResponseUtil.error("Email não encontrado", 404);
+        return usuarioService.enviarCodigoVerificacao(emailDTO.getEmail());
     }
 
     @PostMapping("/verificar-codigo")
-    public ApiResponse<Boolean> verificarCodigo(@RequestBody EmailDTO emailDTO) {
-        boolean isValid = usuarioService.existsByEmail(emailDTO.getEmail());
-        return apiResponseUtil.map(isValid, Boolean.class,
-                isValid ? "Código válido" : "Código inválido");
+    public ApiResponse<Void> verificarCodigo(@RequestBody EmailCode emailCode) {
+        return usuarioService.verificarCodigo(emailCode.getEmail(), emailCode.getCodigo());
     }
 
     @PostMapping("/redefinir-senha")
@@ -89,10 +97,8 @@ public class UsuarioController {
     }
 
     @GetMapping("/verificar-email/{email}")
-    public ApiResponse<Boolean> verificarEmail(@PathVariable String email) {
-        boolean exists = usuarioService.existsByEmail(email);
-        return apiResponseUtil.map(!exists, Boolean.class,
-                exists ? "Email já cadastrado" : "Email disponível");
+    public ApiResponse<Void> verificarEmail(@PathVariable String email) {
+        return usuarioService.verificarEmailDisponibilidade(email);
     }
 
     @GetMapping("/{keycloakId}")
@@ -110,11 +116,6 @@ public class UsuarioController {
     @PreAuthorize("hasRole('admin')")
     public ApiResponse<List<String>> buscarSetoresDistintos() {
         return usuarioService.buscarSetoresDistintos();
-    }
-
-    @PutMapping("/atualizar-usuario/{id}")
-    public ApiResponse<UsuarioResponseDTO> atualizarUsuario(@PathVariable String id, @RequestBody UsuarioUpdateDTO usuarioUpdateDTO ){
-        return usuarioService.atualizarUsuario(id, usuarioUpdateDTO);
     }
 
     @GetMapping("/setor/{keycloakId}")

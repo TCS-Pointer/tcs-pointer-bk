@@ -1,7 +1,7 @@
 package br.com.pointer.pointer_back.config;
 
 import br.com.pointer.pointer_back.auth.TokenValidationInterceptor;
-import org.springframework.beans.factory.annotation.Autowired;
+import br.com.pointer.pointer_back.constant.SecurityConstants;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -9,17 +9,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Autowired
-    private TokenValidationInterceptor tokenValidationInterceptor;
+    private final TokenValidationInterceptor tokenValidationInterceptor;
+
+    public WebConfig(TokenValidationInterceptor tokenValidationInterceptor) {
+        this.tokenValidationInterceptor = tokenValidationInterceptor;
+    }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(tokenValidationInterceptor)
-                .addPathPatterns("/**") // Aplica a todas as rotas
-                .excludePathPatterns( // Exclui rotas públicas
-                        "/token",
-                        "/usuarios/criar",
-                        "/usuarios/atualizar-senha",
-                        "/error");
+                .addPathPatterns("/**")
+                .excludePathPatterns(SecurityConstants.EXCLUDED_PATHS.toArray(new String[0]));
     }
 }

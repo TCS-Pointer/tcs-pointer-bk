@@ -19,17 +19,10 @@ public class Usuario {
     private String email;
 
     @Column(nullable = false)
-    private String senha;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private StatusUsuario status;
+    private String setor;
 
     @Column(nullable = false)
     private String cargo;
-
-    @Column(nullable = false)
-    private String setor;
 
     @Column(name = "tipo_usuario", nullable = false)
     private String tipoUsuario;
@@ -37,11 +30,15 @@ public class Usuario {
     @Column(name = "dt_criacao", nullable = false)
     private LocalDateTime dataCriacao;
 
+    @Column(name = "keycloak_id", nullable = false, unique = true)
+    private String keycloakId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatusUsuario status = StatusUsuario.ATIVO;
+
     @PrePersist
     protected void onCreate() {
         dataCriacao = LocalDateTime.now();
-        if (status == null) {
-            status = StatusUsuario.ATIVO;
-        }
     }
 }

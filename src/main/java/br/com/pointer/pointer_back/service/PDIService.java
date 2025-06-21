@@ -3,22 +3,22 @@ package br.com.pointer.pointer_back.service;
 import br.com.pointer.pointer_back.dto.pdiDTO;
 import br.com.pointer.pointer_back.dto.AtualizarStatusPDIDTO;
 import br.com.pointer.pointer_back.exception.PDINaoEncontradoException;
-import br.com.pointer.pointer_back.mapper.PDIMapper;
 import br.com.pointer.pointer_back.model.PDI;
 import br.com.pointer.pointer_back.repository.PDIRepository;
 import br.com.pointer.pointer_back.enums.StatusPDI;
 import br.com.pointer.pointer_back.enums.StatusMarcoPDI;
 import br.com.pointer.pointer_back.model.MarcoPDI;
-
+import br.com.pointer.pointer_back.ApiResponse;
+import br.com.pointer.pointer_back.util.ApiResponseUtil;
+import br.com.pointer.pointer_back.model.Usuario;
+import br.com.pointer.pointer_back.repository.UsuarioRepository;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
-import java.util.stream.Collectors;
-import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
 @Service
@@ -30,61 +30,52 @@ public class PDIService {
     private PDIRepository pdiRepository;
 
     @Autowired
-    private final PDIMapper pdiMapper;
+    private final ModelMapper modelMapper;
 
-    public PDIService(PDIRepository pdiRepository, PDIMapper pdiMapper) {
+    @Autowired
+    private final ApiResponseUtil apiResponseUtil;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    public PDIService(PDIRepository pdiRepository, ModelMapper modelMapper, ApiResponseUtil apiResponseUtil) {
         this.pdiRepository = pdiRepository;
-        this.pdiMapper = pdiMapper;
+        this.modelMapper = modelMapper;
+        this.apiResponseUtil = apiResponseUtil;
     }
 
-    // TODO: Verificar se todos os marcos estão CONCLUIDOS, PDI será CONCLUIDO
-    // TODO: Get PDI por ID Usuario (criador) (request param)
-    // TODO: Get PDI por ID Destinatário (request param)
-    // TODO: Trocar destinatario para idDestinatario
-    // TODO: Validação data inicial < data final PDI e Marcos
-    // TODO: Validar se todos os marcos estão CONCLUIDOS, PDI será CONCLUIDO
-    // TODO: Validar duração mínima de 1 mês
-
-    // TODO: Rota get todas os PDI (somente admin)
-    // TODO: Rota get PDI por ID usuario (rota do gestor e admin)
-    // TODO: Rota get PDI por ID destinatário (rota do usuario)
-
     @Transactional(readOnly = true)
-    public List<pdiDTO> buscarPorUsuario(Long idUsuario) {
+    public ApiResponse<List<pdiDTO>> buscarPorUsuario(Long idUsuario) {
         try {
             List<PDI> pdis = pdiRepository.findByIdUsuario(idUsuario);
-            return pdis.stream()
-                    .map(pdiMapper::toDTO)
-                    .collect(Collectors.toList());
+            return apiResponseUtil.mapList(pdis, pdiDTO.class, "PDIs do usuário listados com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao buscar PDIs por usuário: ", e);
-            throw new RuntimeException("Erro ao buscar PDIs por usuário: " + e.getMessage());
+            return apiResponseUtil.error("Erro ao buscar PDIs por usuário: " + e.getMessage(), 400);
         }
     }
 
     @Transactional(readOnly = true)
-    public List<pdiDTO> buscarPorDestinatario(Long idDestinatario) {
+    public ApiResponse<List<pdiDTO>> buscarPorDestinatario(Long idDestinatario) {
         try {
             List<PDI> pdis = pdiRepository.findByIdDestinatario(idDestinatario);
-            return pdis.stream()
-                    .map(pdiMapper::toDTO)
-                    .collect(Collectors.toList());
+            return apiResponseUtil.mapList(pdis, pdiDTO.class, "PDIs do destinatário listados com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao buscar PDIs por destinatário: ", e);
-            throw new RuntimeException("Erro ao buscar PDIs por destinatário: " + e.getMessage());
+            return apiResponseUtil.error("Erro ao buscar PDIs por destinatário: " + e.getMessage(), 400);
         }
     }
 
     private void validarDatasPDI(pdiDTO dto) {
-        if (dto.getDataInicio() != null && dto.getDataFim() != null) {
-            if (dto.getDataInicio().isAfter(dto.getDataFim())) {
+        if (dto.getDtInicio() != null && dto.getDtFim() != null) {
+            if (dto.getDtInicio().isAfter(dto.getDtFim())) {
                 throw new IllegalArgumentException("Data inicial não pode ser posterior à data final");
             }
 
             // Validar duração mínima de 1 mês
             long mesesEntreDatas = ChronoUnit.MONTHS.between(
-                    dto.getDataInicio(),
-                    dto.getDataFim());
+                    dto.getDtInicio(),
+                    dto.getDtFim());
 
             if (mesesEntreDatas < 1) {
                 throw new IllegalArgumentException("O PDI deve ter duração mínima de 1 mês");
@@ -104,7 +95,7 @@ public class PDIService {
     }
 
     @Transactional
-    public pdiDTO criar(pdiDTO dto) {
+    public ApiResponse<pdiDTO> criar(pdiDTO dto) {
         try {
             logger.info("Iniciando criação de PDI com dados: {}", dto);
 
@@ -112,61 +103,73 @@ public class PDIService {
 
             if (dto.getStatus() == null) {
                 logger.error("Status do PDI é nulo");
-                throw new IllegalArgumentException("Status do PDI é obrigatório");
+                return apiResponseUtil.error("Status do PDI é obrigatório", 400);
             }
 
             try {
                 StatusPDI.valueOf(dto.getStatus().name());
             } catch (IllegalArgumentException e) {
                 logger.error("Status inválido: {}", dto.getStatus());
-                throw new IllegalArgumentException("Status inválido: " + dto.getStatus());
+                return apiResponseUtil.error("Status inválido: " + dto.getStatus(), 400);
             }
 
-            PDI pdi = pdiMapper.toEntity(dto);
+            PDI pdi = modelMapper.map(dto, PDI.class);
             logger.info("PDI convertido para entidade: {}", pdi);
+
+            // Associar destinatário já existente ao PDI
+            if (dto.getIdDestinatario() == null) {
+                logger.error("ID do destinatário é nulo");
+                return apiResponseUtil.error("ID do destinatário é obrigatório", 400);
+            }
+            Usuario destinatario = usuarioRepository.findById(dto.getIdDestinatario())
+                    .orElseThrow(() -> new RuntimeException(
+                            "Destinatário não encontrado com ID: " + dto.getIdDestinatario()));
+            pdi.setDestinatario(destinatario);
+
+            // Garantir que cada marco aponte para o PDI correto
+            if (pdi.getMarcos() != null) {
+                for (MarcoPDI marco : pdi.getMarcos()) {
+                    marco.setPdi(pdi);
+                }
+            }
 
             validarStatusPDI(pdi);
 
             PDI salvo = pdiRepository.save(pdi);
             logger.info("PDI salvo com sucesso: {}", salvo);
 
-            return pdiMapper.toDTO(salvo);
-        } catch (IllegalArgumentException e) {
-            logger.error("Erro de validação ao criar PDI: ", e);
-            throw e;
+            return apiResponseUtil.created(modelMapper.map(salvo, pdiDTO.class), "PDI criado com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao criar PDI: ", e);
-            throw new RuntimeException("Erro ao criar PDI: " + e.getMessage(), e);
+            return apiResponseUtil.error("Erro ao criar PDI: " + e.getMessage(), 400);
         }
     }
 
     @Transactional(readOnly = true)
-    public List<pdiDTO> listarTodos() {
+    public ApiResponse<List<pdiDTO>> listarTodos() {
         try {
             List<PDI> pdis = pdiRepository.findAll();
-            return pdis.stream()
-                    .map(pdiMapper::toDTO)
-                    .collect(Collectors.toList());
+            return apiResponseUtil.mapList(pdis, pdiDTO.class, "PDIs listados com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao listar PDIs: ", e);
-            throw new RuntimeException("Erro ao listar PDIs: " + e.getMessage());
+            return apiResponseUtil.error("Erro ao listar PDIs: " + e.getMessage(), 400);
         }
     }
 
     @Transactional(readOnly = true)
-    public pdiDTO buscarPorId(Long id) {
+    public ApiResponse<pdiDTO> buscarPorId(Long id) {
         try {
             PDI pdi = pdiRepository.findById(id)
                     .orElseThrow(() -> new PDINaoEncontradoException("PDI não encontrado com ID: " + id));
-            return pdiMapper.toDTO(pdi);
+            return apiResponseUtil.map(pdi, pdiDTO.class, "PDI encontrado com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao buscar PDI: ", e);
-            throw new RuntimeException("Erro ao buscar PDI: " + e.getMessage());
+            return apiResponseUtil.error("Erro ao buscar PDI: " + e.getMessage(), 400);
         }
     }
 
     @Transactional
-    public pdiDTO atualizar(Long id, pdiDTO dto) {
+    public ApiResponse<pdiDTO> atualizar(Long id, pdiDTO dto) {
         try {
             PDI pdi = pdiRepository.findById(id)
                     .orElseThrow(() -> new PDINaoEncontradoException("PDI não encontrado com ID: " + id));
@@ -176,44 +179,41 @@ public class PDIService {
                     StatusPDI.valueOf(dto.getStatus().name());
                 } catch (IllegalArgumentException e) {
                     logger.error("Status inválido: {}", dto.getStatus());
-                    throw new IllegalArgumentException("Status inválido: " + dto.getStatus());
+                    return apiResponseUtil.error("Status inválido: " + dto.getStatus(), 400);
                 }
             }
 
-            pdiMapper.updateEntityFromDTO(dto, pdi);
+            modelMapper.map(dto, pdi);
             PDI atualizado = pdiRepository.save(pdi);
-            return pdiMapper.toDTO(atualizado);
-        } catch (IllegalArgumentException e) {
-            logger.error("Erro de validação ao atualizar PDI: ", e);
-            throw e;
+            return apiResponseUtil.map(atualizado, pdiDTO.class, "PDI atualizado com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao atualizar PDI: ", e);
-            throw new RuntimeException("Erro ao atualizar PDI: " + e.getMessage());
+            return apiResponseUtil.error("Erro ao atualizar PDI: " + e.getMessage(), 400);
         }
     }
 
     @Transactional
-    public void deletar(Long id) {
+    public ApiResponse<Void> deletar(Long id) {
         try {
             if (!pdiRepository.existsById(id)) {
-                throw new PDINaoEncontradoException("PDI não encontrado com ID: " + id);
+                return apiResponseUtil.error("PDI não encontrado com ID: " + id, 400);
             }
             pdiRepository.deleteById(id);
+            return apiResponseUtil.success(null, "PDI deletado com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao deletar PDI: ", e);
-            throw new RuntimeException("Erro ao deletar PDI: " + e.getMessage());
+            return apiResponseUtil.error("Erro ao deletar PDI: " + e.getMessage(), 400);
         }
     }
 
     @Transactional
-    public pdiDTO atualizarStatus(Long id, AtualizarStatusPDIDTO dto) {
+    public ApiResponse<pdiDTO> atualizarStatus(Long id, AtualizarStatusPDIDTO dto) {
         try {
             PDI pdi = pdiRepository.findById(id)
                     .orElseThrow(() -> new PDINaoEncontradoException("PDI não encontrado com ID: " + id));
 
-            // Atualiza o status do marco
             if (dto.getIdMarco() == null || dto.getStatusMarco() == null) {
-                throw new IllegalArgumentException("ID do marco e status são obrigatórios");
+                return apiResponseUtil.error("ID do marco e status são obrigatórios", 400);
             }
 
             boolean marcoEncontrado = false;
@@ -226,36 +226,32 @@ public class PDIService {
             }
 
             if (!marcoEncontrado) {
-                throw new IllegalArgumentException("Marco não encontrado no PDI");
+                return apiResponseUtil.error("Marco não encontrado no PDI", 400);
             }
 
-            // Verifica se todos os marcos estão concluídos
             boolean todosMarcosConcluidos = pdi.getMarcos().stream()
                     .allMatch(marco -> marco.getStatus() == StatusMarcoPDI.CONCLUIDO);
 
-            // Se todos os marcos estiverem concluídos, atualiza o status do PDI
             if (todosMarcosConcluidos) {
                 pdi.setStatus(StatusPDI.CONCLUIDO);
             }
 
             PDI atualizado = pdiRepository.save(pdi);
-            return pdiMapper.toDTO(atualizado);
+            return apiResponseUtil.map(atualizado, pdiDTO.class, "Status do PDI atualizado com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao atualizar status do marco: ", e);
-            throw new RuntimeException("Erro ao atualizar status do marco: " + e.getMessage());
+            return apiResponseUtil.error("Erro ao atualizar status do marco: " + e.getMessage(), 400);
         }
     }
 
     @Transactional(readOnly = true)
-    public List<pdiDTO> listarTodosComDestinatario() {
+    public ApiResponse<List<pdiDTO>> listarTodosComDestinatario() {
         try {
             List<PDI> pdis = pdiRepository.findAllWithDestinatario();
-            return pdis.stream()
-                    .map(pdiMapper::toDTO)
-                    .collect(Collectors.toList());
+            return apiResponseUtil.mapList(pdis, pdiDTO.class, "PDIs com destinatário listados com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao listar PDIs com destinatário: ", e);
-            throw new RuntimeException("Erro ao listar PDIs com destinatário: " + e.getMessage());
+            return apiResponseUtil.error("Erro ao listar PDIs com destinatário: " + e.getMessage(), 400);
         }
     }
 }

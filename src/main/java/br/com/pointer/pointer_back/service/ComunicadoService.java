@@ -1,5 +1,6 @@
 package br.com.pointer.pointer_back.service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -62,7 +63,7 @@ public class ComunicadoService {
                         .map(comunicadoMapper::toDTO)
                         .collect(Collectors.toList());
             } else {
-                comunicados = comunicadoRepository.findBySetor(setor).stream()
+                comunicados = comunicadoRepository.findBySetoresContaining(setor).stream()
                         .filter(comunicado -> !comunicado.isApenasGestores() || isGestor)
                         .map(comunicadoMapper::toDTO)
                         .collect(Collectors.toList());
@@ -91,7 +92,7 @@ public class ComunicadoService {
                 throw new SecurityException("Usuário não tem permissão para acessar comunicados de outro setor");
             }
 
-            List<ComunicadoDTO> comunicados = comunicadoRepository.findBySetor(setor).stream()
+            List<ComunicadoDTO> comunicados = comunicadoRepository.findBySetoresContaining(setor).stream()
                     .filter(comunicado -> !comunicado.isApenasGestores() || isGestor)
                     .map(comunicadoMapper::toDTO)
                     .collect(Collectors.toList());
@@ -125,7 +126,7 @@ public class ComunicadoService {
                 comunicados = comunicadoRepository.findByApenasGestores(true);
             } else {
                 String setor = usuario.getSetor();
-                comunicados = comunicadoRepository.findBySetorAndApenasGestores(setor, true);
+                comunicados = comunicadoRepository.findBySetoresContainingAndApenasGestores(setor, true);
             }
 
             return comunicados.stream()
@@ -152,7 +153,7 @@ public class ComunicadoService {
             String setorUsuario = usuario.getSetor();
             Comunicado comunicado = comunicadoRepository.findById(id)
                     .orElseThrow(() -> new ComunicadoNaoEncontradoException("Comunicado não encontrado com ID: " + id));
-            if (!isAdmin && !comunicado.getSetor().equalsIgnoreCase(setorUsuario)) {
+            if (!isAdmin && !comunicado.getSetores().contains(setorUsuario)) {
                 logger.error("Tentativa de acesso não autorizado ao comunicado: {}", id);
                 throw new SecurityException("Usuário não tem permissão para acessar comunicados de outro setor");
             }
@@ -181,8 +182,8 @@ public class ComunicadoService {
                     .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
             String setorUsuario = getSetorUsuarioAutenticado();
 
-            if (!isAdmin && !comunicadoDTO.getSetor().equals(setorUsuario)) {
-                logger.error("Tentativa de criação não autorizada para o setor: {}", comunicadoDTO.getSetor());
+            if (!isAdmin && !comunicadoDTO.getSetores().contains(setorUsuario)) {
+                logger.error("Tentativa de criação não autorizada para o setor: {}", comunicadoDTO.getSetores());
                 throw new SecurityException("Usuário não tem permissão para criar comunicados para outro setor");
             }
 
@@ -213,20 +214,21 @@ public class ComunicadoService {
             Comunicado comunicadoExistente = comunicadoRepository.findById(id)
                     .orElseThrow(() -> new ComunicadoNaoEncontradoException("Comunicado não encontrado com ID: " + id));
 
-            if (!isAdmin && !comunicadoExistente.getSetor().equals(setorUsuario)) {
+            if (!isAdmin && !comunicadoExistente.getSetores().contains(setorUsuario)) {
                 logger.error("Tentativa de atualização não autorizada do comunicado: {}", id);
                 throw new SecurityException("Usuário não tem permissão para atualizar comunicados de outro setor");
             }
 
-            if (!isAdmin && !comunicadoDTO.getSetor().equals(setorUsuario)) {
-                logger.error("Tentativa de mover comunicado para outro setor: {}", comunicadoDTO.getSetor());
-                throw new SecurityException("Usuário não tem permissão para mover comunicado para outro setor");
+            if (!isAdmin) {
+                if(comunicadoDTO.getSetores() == null || comunicadoDTO.getSetores().size() != 1 || !comunicadoDTO.getSetores().contains(setorUsuario)){
+                    throw new SecurityException("Usuário não tem permissão para alterar os setores do comunicado.");
+                }
             }
 
             Comunicado comunicadoAtualizado = comunicadoMapper.toEntity(comunicadoDTO);
             comunicadoExistente.setTitulo(comunicadoAtualizado.getTitulo());
             comunicadoExistente.setDescricao(comunicadoAtualizado.getDescricao());
-            comunicadoExistente.setSetor(comunicadoAtualizado.getSetor());
+            comunicadoExistente.setSetores(comunicadoAtualizado.getSetores());
             comunicadoExistente.setApenasGestores(comunicadoAtualizado.isApenasGestores());
             
             Comunicado salvo = comunicadoRepository.save(comunicadoExistente);
@@ -255,7 +257,7 @@ public class ComunicadoService {
             Comunicado comunicado = comunicadoRepository.findById(id)
                     .orElseThrow(() -> new ComunicadoNaoEncontradoException("Comunicado não encontrado com ID: " + id));
 
-            if (!isAdmin && !comunicado.getSetor().equals(setorUsuario)) {
+            if (!isAdmin && !comunicado.getSetores().contains(setorUsuario)) {
                 logger.error("Tentativa de deleção não autorizada do comunicado: {}", id);
                 throw new SecurityException("Usuário não tem permissão para deletar comunicados de outro setor");
             }

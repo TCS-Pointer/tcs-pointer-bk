@@ -14,7 +14,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+import br.com.pointer.pointer_back.constant.SecurityConstants;
 
 @Configuration
 @EnableWebSecurity
@@ -23,41 +23,36 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+        return http
                 .cors().and()
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/token/**").permitAll()
-                        .requestMatchers("/usuarios/verificar-codigo").permitAll()
-                        .requestMatchers("/usuarios/redefinir-senha").permitAll()
-                        .requestMatchers("/usuarios/esqueceu-senha").permitAll()
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> {
+                    SecurityConstants.PUBLIC_URLS.forEach(url -> auth.requestMatchers(url).permitAll());
+                    auth.anyRequest().authenticated();
+                })
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(new JWTConverter())));
-
-        return http.build();
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(new JWTConverter())))
+                .build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000",
-            "http://localhost:8080",
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:8080"
-        ));
-        configuration.setAllowedMethods(
-                Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "TRACE", "CONNECT", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
-
+        CorsConfiguration configuration = createCorsConfiguration();
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    private CorsConfiguration createCorsConfiguration() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(SecurityConstants.ALLOWED_ORIGINS);
+        configuration.setAllowedMethods(SecurityConstants.ALLOWED_METHODS);
+        configuration.setAllowedHeaders(SecurityConstants.ALLOWED_HEADERS);
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(SecurityConstants.CORS_MAX_AGE);
+        return configuration;
     }
 
     @Bean

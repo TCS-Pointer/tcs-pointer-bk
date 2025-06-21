@@ -1,13 +1,7 @@
 package br.com.pointer.pointer_back.service;
 
-import br.com.pointer.pointer_back.dto.MarcoPDIDTO;
-import br.com.pointer.pointer_back.exception.MarcoPDINaoEncontradoException;
-import br.com.pointer.pointer_back.model.MarcoPDI;
-import br.com.pointer.pointer_back.model.PDI;
-import br.com.pointer.pointer_back.repository.MarcoPDIRepository;
-import br.com.pointer.pointer_back.repository.PDIRepository;
-import br.com.pointer.pointer_back.ApiResponse;
-import br.com.pointer.pointer_back.util.ApiResponseUtil;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -16,7 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import br.com.pointer.pointer_back.ApiResponse;
+import br.com.pointer.pointer_back.dto.MarcoPDIDTO;
+import br.com.pointer.pointer_back.exception.MarcoPDINaoEncontradoException;
+import br.com.pointer.pointer_back.model.MarcoPDI;
+import br.com.pointer.pointer_back.model.PDI;
+import br.com.pointer.pointer_back.repository.MarcoPDIRepository;
+import br.com.pointer.pointer_back.repository.PDIRepository;
 
 @Service
 public class MarcoPDIService {
@@ -26,15 +26,13 @@ public class MarcoPDIService {
     private final MarcoPDIRepository marcoPDIRepository;
     private final PDIRepository pdiRepository;
     private final ModelMapper modelMapper;
-    private final ApiResponseUtil apiResponseUtil;
 
     @Autowired
     public MarcoPDIService(MarcoPDIRepository marcoPDIRepository, PDIRepository pdiRepository,
-            ModelMapper modelMapper, ApiResponseUtil apiResponseUtil) {
+            ModelMapper modelMapper) {
         this.marcoPDIRepository = marcoPDIRepository;
         this.pdiRepository = pdiRepository;
         this.modelMapper = modelMapper;
-        this.apiResponseUtil = apiResponseUtil;
     }
 
     @Transactional
@@ -43,7 +41,7 @@ public class MarcoPDIService {
             logger.info("Iniciando criação de Marco PDI com dados: {}", dto);
 
             if (dto.getPdiId() == null) {
-                return apiResponseUtil.error("ID do PDI é obrigatório", 400);
+                return ApiResponse.badRequest("ID do PDI é obrigatório");
             }
 
             PDI pdi = pdiRepository.findById(dto.getPdiId())
@@ -56,10 +54,10 @@ public class MarcoPDIService {
             MarcoPDI salvo = marcoPDIRepository.save(marcoPDI);
             logger.info("Marco PDI salvo com sucesso: {}", salvo);
 
-            return apiResponseUtil.created(modelMapper.map(salvo, MarcoPDIDTO.class), "Marco PDI criado com sucesso");
+            return ApiResponse.success(modelMapper.map(salvo, MarcoPDIDTO.class), "Marco PDI criado com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao criar Marco PDI: ", e);
-            return apiResponseUtil.error("Erro ao criar Marco PDI: " + e.getMessage(), 400);
+            return ApiResponse.badRequest("Erro ao criar Marco PDI: " + e.getMessage());
         }
     }
 
@@ -67,10 +65,13 @@ public class MarcoPDIService {
     public ApiResponse<List<MarcoPDIDTO>> listarPorPDI(Long pdiId) {
         try {
             List<MarcoPDI> marcos = marcoPDIRepository.findByPdiId(pdiId);
-            return apiResponseUtil.mapList(marcos, MarcoPDIDTO.class, "Marcos PDI listados com sucesso");
+            List<MarcoPDIDTO> dtos = marcos.stream()
+                    .map(marco -> modelMapper.map(marco, MarcoPDIDTO.class))
+                    .collect(Collectors.toList());
+            return ApiResponse.success(dtos, "Marcos PDI listados com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao listar Marcos PDI: ", e);
-            return apiResponseUtil.error("Erro ao listar Marcos PDI: " + e.getMessage(), 400);
+            return ApiResponse.badRequest("Erro ao listar Marcos PDI: " + e.getMessage());
         }
     }
 
@@ -79,10 +80,11 @@ public class MarcoPDIService {
         try {
             MarcoPDI marcoPDI = marcoPDIRepository.findById(id)
                     .orElseThrow(() -> new MarcoPDINaoEncontradoException("Marco PDI não encontrado com ID: " + id));
-            return apiResponseUtil.map(marcoPDI, MarcoPDIDTO.class, "Marco PDI encontrado com sucesso");
+            return ApiResponse.success(modelMapper.map(marcoPDI, MarcoPDIDTO.class),
+                    "Marco PDI encontrado com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao buscar Marco PDI: ", e);
-            return apiResponseUtil.error("Erro ao buscar Marco PDI: " + e.getMessage(), 400);
+            return ApiResponse.badRequest("Erro ao buscar Marco PDI: " + e.getMessage());
         }
     }
 
@@ -94,10 +96,11 @@ public class MarcoPDIService {
 
             modelMapper.map(dto, marcoPDI);
             MarcoPDI atualizado = marcoPDIRepository.save(marcoPDI);
-            return apiResponseUtil.map(atualizado, MarcoPDIDTO.class, "Marco PDI atualizado com sucesso");
+            return ApiResponse.success(modelMapper.map(atualizado, MarcoPDIDTO.class),
+                    "Marco PDI atualizado com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao atualizar Marco PDI: ", e);
-            return apiResponseUtil.error("Erro ao atualizar Marco PDI: " + e.getMessage(), 400);
+            return ApiResponse.badRequest("Erro ao atualizar Marco PDI: " + e.getMessage());
         }
     }
 
@@ -105,13 +108,13 @@ public class MarcoPDIService {
     public ApiResponse<Void> deletar(Long id) {
         try {
             if (!marcoPDIRepository.existsById(id)) {
-                return apiResponseUtil.error("Marco PDI não encontrado com ID: " + id, 400);
+                return ApiResponse.badRequest("Marco PDI não encontrado com ID: " + id);
             }
             marcoPDIRepository.deleteById(id);
-            return apiResponseUtil.success(null, "Marco PDI deletado com sucesso");
+            return ApiResponse.success(null, "Marco PDI deletado com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao deletar Marco PDI: ", e);
-            return apiResponseUtil.error("Erro ao deletar Marco PDI: " + e.getMessage(), 400);
+            return ApiResponse.badRequest("Erro ao deletar Marco PDI: " + e.getMessage());
         }
     }
 }

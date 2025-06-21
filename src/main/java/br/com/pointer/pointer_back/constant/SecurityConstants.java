@@ -19,7 +19,6 @@ public final class SecurityConstants {
     public static final List<String> EXCLUDED_PATHS = Arrays.asList(
         "/token",
         "/api/usuarios/atualizar-senha",
-        "/api/usuarios/recuperar-senha",
         "/api/usuarios/primeiro-acesso",
         "/api/usuarios/primeiro-acesso/reenviar",
         "/api/usuarios/redefinir-senha",

@@ -1,25 +1,27 @@
 package br.com.pointer.pointer_back.service;
 
-import br.com.pointer.pointer_back.dto.pdiDTO;
-import br.com.pointer.pointer_back.dto.AtualizarStatusPDIDTO;
-import br.com.pointer.pointer_back.exception.PDINaoEncontradoException;
-import br.com.pointer.pointer_back.model.PDI;
-import br.com.pointer.pointer_back.repository.PDIRepository;
-import br.com.pointer.pointer_back.enums.StatusPDI;
-import br.com.pointer.pointer_back.enums.StatusMarcoPDI;
-import br.com.pointer.pointer_back.model.MarcoPDI;
-import br.com.pointer.pointer_back.ApiResponse;
-import br.com.pointer.pointer_back.util.ApiResponseUtil;
-import br.com.pointer.pointer_back.model.Usuario;
-import br.com.pointer.pointer_back.repository.UsuarioRepository;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
-import java.time.temporal.ChronoUnit;
+
+import br.com.pointer.pointer_back.ApiResponse;
+import br.com.pointer.pointer_back.dto.AtualizarStatusPDIDTO;
+import br.com.pointer.pointer_back.dto.pdiDTO;
+import br.com.pointer.pointer_back.enums.StatusMarcoPDI;
+import br.com.pointer.pointer_back.enums.StatusPDI;
+import br.com.pointer.pointer_back.exception.PDINaoEncontradoException;
+import br.com.pointer.pointer_back.model.MarcoPDI;
+import br.com.pointer.pointer_back.model.PDI;
+import br.com.pointer.pointer_back.model.Usuario;
+import br.com.pointer.pointer_back.repository.PDIRepository;
+import br.com.pointer.pointer_back.repository.UsuarioRepository;
 
 @Service
 public class PDIService {
@@ -33,25 +35,24 @@ public class PDIService {
     private final ModelMapper modelMapper;
 
     @Autowired
-    private final ApiResponseUtil apiResponseUtil;
-
-    @Autowired
     private UsuarioRepository usuarioRepository;
 
-    public PDIService(PDIRepository pdiRepository, ModelMapper modelMapper, ApiResponseUtil apiResponseUtil) {
+    public PDIService(PDIRepository pdiRepository, ModelMapper modelMapper) {
         this.pdiRepository = pdiRepository;
         this.modelMapper = modelMapper;
-        this.apiResponseUtil = apiResponseUtil;
     }
 
     @Transactional(readOnly = true)
     public ApiResponse<List<pdiDTO>> buscarPorUsuario(Long idUsuario) {
         try {
             List<PDI> pdis = pdiRepository.findByIdUsuario(idUsuario);
-            return apiResponseUtil.mapList(pdis, pdiDTO.class, "PDIs do usuário listados com sucesso");
+            List<pdiDTO> dtos = pdis.stream()
+                    .map(pdi -> modelMapper.map(pdi, pdiDTO.class))
+                    .collect(Collectors.toList());
+            return ApiResponse.success(dtos, "PDIs do usuário listados com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao buscar PDIs por usuário: ", e);
-            return apiResponseUtil.error("Erro ao buscar PDIs por usuário: " + e.getMessage(), 400);
+            return ApiResponse.badRequest("Erro ao buscar PDIs por usuário: " + e.getMessage());
         }
     }
 
@@ -59,10 +60,13 @@ public class PDIService {
     public ApiResponse<List<pdiDTO>> buscarPorDestinatario(Long idDestinatario) {
         try {
             List<PDI> pdis = pdiRepository.findByIdDestinatario(idDestinatario);
-            return apiResponseUtil.mapList(pdis, pdiDTO.class, "PDIs do destinatário listados com sucesso");
+            List<pdiDTO> dtos = pdis.stream()
+                    .map(pdi -> modelMapper.map(pdi, pdiDTO.class))
+                    .collect(Collectors.toList());
+            return ApiResponse.success(dtos, "PDIs do destinatário listados com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao buscar PDIs por destinatário: ", e);
-            return apiResponseUtil.error("Erro ao buscar PDIs por destinatário: " + e.getMessage(), 400);
+            return ApiResponse.badRequest("Erro ao buscar PDIs por destinatário: " + e.getMessage());
         }
     }
 
@@ -103,14 +107,14 @@ public class PDIService {
 
             if (dto.getStatus() == null) {
                 logger.error("Status do PDI é nulo");
-                return apiResponseUtil.error("Status do PDI é obrigatório", 400);
+                return ApiResponse.badRequest("Status do PDI é obrigatório");
             }
 
             try {
                 StatusPDI.valueOf(dto.getStatus().name());
             } catch (IllegalArgumentException e) {
                 logger.error("Status inválido: {}", dto.getStatus());
-                return apiResponseUtil.error("Status inválido: " + dto.getStatus(), 400);
+                return ApiResponse.badRequest("Status inválido: " + dto.getStatus());
             }
 
             PDI pdi = modelMapper.map(dto, PDI.class);
@@ -119,7 +123,7 @@ public class PDIService {
             // Associar destinatário já existente ao PDI
             if (dto.getIdDestinatario() == null) {
                 logger.error("ID do destinatário é nulo");
-                return apiResponseUtil.error("ID do destinatário é obrigatório", 400);
+                return ApiResponse.badRequest("ID do destinatário é obrigatório");
             }
             Usuario destinatario = usuarioRepository.findById(dto.getIdDestinatario())
                     .orElseThrow(() -> new RuntimeException(
@@ -138,10 +142,10 @@ public class PDIService {
             PDI salvo = pdiRepository.save(pdi);
             logger.info("PDI salvo com sucesso: {}", salvo);
 
-            return apiResponseUtil.created(modelMapper.map(salvo, pdiDTO.class), "PDI criado com sucesso");
+            return ApiResponse.success(modelMapper.map(salvo, pdiDTO.class), "PDI criado com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao criar PDI: ", e);
-            return apiResponseUtil.error("Erro ao criar PDI: " + e.getMessage(), 400);
+            return ApiResponse.badRequest("Erro ao criar PDI: " + e.getMessage());
         }
     }
 
@@ -149,10 +153,13 @@ public class PDIService {
     public ApiResponse<List<pdiDTO>> listarTodos() {
         try {
             List<PDI> pdis = pdiRepository.findAll();
-            return apiResponseUtil.mapList(pdis, pdiDTO.class, "PDIs listados com sucesso");
+            List<pdiDTO> dtos = pdis.stream()
+                    .map(pdi -> modelMapper.map(pdi, pdiDTO.class))
+                    .collect(Collectors.toList());
+            return ApiResponse.success(dtos, "PDIs listados com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao listar PDIs: ", e);
-            return apiResponseUtil.error("Erro ao listar PDIs: " + e.getMessage(), 400);
+            return ApiResponse.badRequest("Erro ao listar PDIs: " + e.getMessage());
         }
     }
 
@@ -161,10 +168,10 @@ public class PDIService {
         try {
             PDI pdi = pdiRepository.findById(id)
                     .orElseThrow(() -> new PDINaoEncontradoException("PDI não encontrado com ID: " + id));
-            return apiResponseUtil.map(pdi, pdiDTO.class, "PDI encontrado com sucesso");
+            return ApiResponse.success(modelMapper.map(pdi, pdiDTO.class), "PDI encontrado com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao buscar PDI: ", e);
-            return apiResponseUtil.error("Erro ao buscar PDI: " + e.getMessage(), 400);
+            return ApiResponse.badRequest("Erro ao buscar PDI: " + e.getMessage());
         }
     }
 
@@ -179,16 +186,16 @@ public class PDIService {
                     StatusPDI.valueOf(dto.getStatus().name());
                 } catch (IllegalArgumentException e) {
                     logger.error("Status inválido: {}", dto.getStatus());
-                    return apiResponseUtil.error("Status inválido: " + dto.getStatus(), 400);
+                    return ApiResponse.badRequest("Status inválido: " + dto.getStatus());
                 }
             }
 
             modelMapper.map(dto, pdi);
             PDI atualizado = pdiRepository.save(pdi);
-            return apiResponseUtil.map(atualizado, pdiDTO.class, "PDI atualizado com sucesso");
+            return ApiResponse.success(modelMapper.map(atualizado, pdiDTO.class), "PDI atualizado com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao atualizar PDI: ", e);
-            return apiResponseUtil.error("Erro ao atualizar PDI: " + e.getMessage(), 400);
+            return ApiResponse.badRequest("Erro ao atualizar PDI: " + e.getMessage());
         }
     }
 
@@ -196,13 +203,13 @@ public class PDIService {
     public ApiResponse<Void> deletar(Long id) {
         try {
             if (!pdiRepository.existsById(id)) {
-                return apiResponseUtil.error("PDI não encontrado com ID: " + id, 400);
+                return ApiResponse.badRequest("PDI não encontrado com ID: " + id);
             }
             pdiRepository.deleteById(id);
-            return apiResponseUtil.success(null, "PDI deletado com sucesso");
+            return ApiResponse.success(null, "PDI deletado com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao deletar PDI: ", e);
-            return apiResponseUtil.error("Erro ao deletar PDI: " + e.getMessage(), 400);
+            return ApiResponse.badRequest("Erro ao deletar PDI: " + e.getMessage());
         }
     }
 
@@ -213,7 +220,7 @@ public class PDIService {
                     .orElseThrow(() -> new PDINaoEncontradoException("PDI não encontrado com ID: " + id));
 
             if (dto.getIdMarco() == null || dto.getStatusMarco() == null) {
-                return apiResponseUtil.error("ID do marco e status são obrigatórios", 400);
+                return ApiResponse.badRequest("ID do marco e status são obrigatórios");
             }
 
             boolean marcoEncontrado = false;
@@ -226,7 +233,7 @@ public class PDIService {
             }
 
             if (!marcoEncontrado) {
-                return apiResponseUtil.error("Marco não encontrado no PDI", 400);
+                return ApiResponse.badRequest("Marco não encontrado no PDI");
             }
 
             boolean todosMarcosConcluidos = pdi.getMarcos().stream()
@@ -237,10 +244,11 @@ public class PDIService {
             }
 
             PDI atualizado = pdiRepository.save(pdi);
-            return apiResponseUtil.map(atualizado, pdiDTO.class, "Status do PDI atualizado com sucesso");
+            return ApiResponse.success(modelMapper.map(atualizado, pdiDTO.class),
+                    "Status do PDI atualizado com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao atualizar status do marco: ", e);
-            return apiResponseUtil.error("Erro ao atualizar status do marco: " + e.getMessage(), 400);
+            return ApiResponse.badRequest("Erro ao atualizar status do marco: " + e.getMessage());
         }
     }
 
@@ -248,10 +256,13 @@ public class PDIService {
     public ApiResponse<List<pdiDTO>> listarTodosComDestinatario() {
         try {
             List<PDI> pdis = pdiRepository.findAllWithDestinatario();
-            return apiResponseUtil.mapList(pdis, pdiDTO.class, "PDIs com destinatário listados com sucesso");
+            List<pdiDTO> dtos = pdis.stream()
+                    .map(pdi -> modelMapper.map(pdi, pdiDTO.class))
+                    .collect(Collectors.toList());
+            return ApiResponse.success(dtos, "PDIs com destinatário listados com sucesso");
         } catch (Exception e) {
             logger.error("Erro ao listar PDIs com destinatário: ", e);
-            return apiResponseUtil.error("Erro ao listar PDIs com destinatário: " + e.getMessage(), 400);
+            return ApiResponse.badRequest("Erro ao listar PDIs com destinatário: " + e.getMessage());
         }
     }
 }

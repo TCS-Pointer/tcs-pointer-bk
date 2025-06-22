@@ -2,71 +2,83 @@ package br.com.pointer.pointer_back.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.dto.ComunicadoDTO;
 import br.com.pointer.pointer_back.service.ComunicadoService;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/comunicados")
+@RequiredArgsConstructor
 public class ComunicadoController {
-    @Autowired
-    private ComunicadoService comunicadoService;
+    
+    private static final String ROLES_COLABORADOR_ADMIN_GESTOR = "hasRole('colaborador') or hasRole('admin') or hasRole('gestor')";
+    private static final String ROLES_ADMIN = "hasRole('admin')";
+    private static final String ROLES_GESTOR_ADMIN = "hasRole('gestor') or hasRole('admin')";
+    
+    private final ComunicadoService comunicadoService;
 
-    @GetMapping("/listar-comunicados")
-    @PreAuthorize("hasRole('colaborador') or hasRole('admin') or hasRole('gestor')")
-    public ResponseEntity<ApiResponse<List<ComunicadoDTO>>> listarTodos(@RequestParam(name = "keycloakId", required = true) String keycloakId) {
-        List<ComunicadoDTO> comunicados = comunicadoService.listarTodos(keycloakId);
-        return ResponseEntity.ok(new ApiResponse<List<ComunicadoDTO>>().ok(comunicados, "Comunicados listados com sucesso"));
+    @GetMapping
+    @PreAuthorize(ROLES_COLABORADOR_ADMIN_GESTOR)
+    public ApiResponse<List<ComunicadoDTO>> listarTodos(@RequestParam String keycloakId) {
+        return new ApiResponse<List<ComunicadoDTO>>().ok(
+            comunicadoService.listarTodos(keycloakId), 
+            "Comunicados listados com sucesso"
+        );
     }
 
-    @GetMapping("/listar-comunicados-setor/{setor}")
-    @PreAuthorize("hasRole('colaborador') or hasRole('admin') or hasRole('gestor')")
-    public ResponseEntity<ApiResponse<List<ComunicadoDTO>>> listarPorSetor(@PathVariable String setor) {
-        List<ComunicadoDTO> comunicados = comunicadoService.listarPorSetor(setor);
-        return ResponseEntity.ok(new ApiResponse<List<ComunicadoDTO>>().ok(comunicados, "Comunicados do setor listados com sucesso"));
+    @GetMapping("/setor/{setor}")
+    @PreAuthorize(ROLES_COLABORADOR_ADMIN_GESTOR)
+    public ApiResponse<List<ComunicadoDTO>> listarPorSetor(@PathVariable String setor) {
+        return new ApiResponse<List<ComunicadoDTO>>().ok(
+            comunicadoService.listarPorSetor(setor), 
+            "Comunicados do setor listados com sucesso"
+        );
     }
 
-    @GetMapping("/buscar-comunicado/{id}")
-    @PreAuthorize("hasRole('colaborador') or hasRole('admin') or hasRole('gestor')")
-    public ResponseEntity<ApiResponse<ComunicadoDTO>> buscarPorId(@PathVariable Long id, @RequestParam(name = "keycloakId", required = true) String keycloakId) {
-        ComunicadoDTO comunicado = comunicadoService.buscarPorId(id, keycloakId);
-        return ResponseEntity.ok(new ApiResponse<ComunicadoDTO>().ok(comunicado, "Comunicado encontrado com sucesso"));
+    @GetMapping("/{id}")
+    @PreAuthorize(ROLES_COLABORADOR_ADMIN_GESTOR)
+    public ApiResponse<ComunicadoDTO> buscarPorId(@PathVariable Long id, @RequestParam String keycloakId) {
+        return new ApiResponse<ComunicadoDTO>().ok(
+            comunicadoService.buscarPorId(id, keycloakId), 
+            "Comunicado encontrado com sucesso"
+        );
     }
 
-    @PostMapping("/criar-comunicado")
-    @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<ApiResponse<ComunicadoDTO>> criar(@RequestBody ComunicadoDTO comunicadoDTO) {
-        ComunicadoDTO comunicadoCriado = comunicadoService.criar(comunicadoDTO);
-        return ResponseEntity.status(201).body(new ApiResponse<ComunicadoDTO>().ok(comunicadoCriado, "Comunicado criado com sucesso"));
+    @PostMapping
+    @PreAuthorize(ROLES_ADMIN)
+    public ApiResponse<ComunicadoDTO> criar(@RequestBody ComunicadoDTO comunicadoDTO) {
+        return new ApiResponse<ComunicadoDTO>().ok(
+            comunicadoService.criar(comunicadoDTO), 
+            "Comunicado criado com sucesso"
+        );
     }
 
-    @PutMapping("/atualizar-comunicado/{id}")
-    @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<ApiResponse<ComunicadoDTO>> atualizar(@PathVariable Long id, @RequestBody ComunicadoDTO comunicadoDTO) {
-        ComunicadoDTO comunicadoAtualizado = comunicadoService.atualizar(id, comunicadoDTO);
-        return ResponseEntity.ok(new ApiResponse<ComunicadoDTO>().ok(comunicadoAtualizado, "Comunicado atualizado com sucesso"));
+    @PutMapping("/{id}")
+    @PreAuthorize(ROLES_ADMIN)
+    public ApiResponse<ComunicadoDTO> atualizar(@PathVariable Long id, @RequestBody ComunicadoDTO comunicadoDTO) {
+        return new ApiResponse<ComunicadoDTO>().ok(
+            comunicadoService.atualizar(id, comunicadoDTO), 
+            "Comunicado atualizado com sucesso"
+        );
     }
 
-    @DeleteMapping("/deletar-comunicado/{id}")
-    @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<ApiResponse<Void>> deletar(@PathVariable Long id) {
+    @DeleteMapping("/{id}")
+    @PreAuthorize(ROLES_ADMIN)
+    public ApiResponse<Void> deletar(@PathVariable Long id) {
         comunicadoService.deletar(id);
-        return ResponseEntity.ok(new ApiResponse<Void>().ok(null, "Comunicado deletado com sucesso"));
+        return new ApiResponse<Void>().ok(null, "Comunicado deletado com sucesso");
     }
 
-    /**
-     * Lista todos os comunicados destinados apenas a gestores.
-     * @param keycloakId id do usuário no Keycloak (deve ser gestor ou admin)
-     */
-    @GetMapping("/listar-apenas-gestores")
-    @PreAuthorize("hasRole('gestor') or hasRole('admin')")
-    public ResponseEntity<ApiResponse<List<ComunicadoDTO>>> listarApenasGestores(@RequestParam(name = "keycloakId", required = true) String keycloakId) {
-        List<ComunicadoDTO> comunicados = comunicadoService.listarApenasGestores(keycloakId);
-        return ResponseEntity.ok(new ApiResponse<List<ComunicadoDTO>>().ok(comunicados, "Comunicados de gestores listados com sucesso"));
+    @GetMapping("/gestores")
+    @PreAuthorize(ROLES_GESTOR_ADMIN)
+    public ApiResponse<List<ComunicadoDTO>> listarApenasGestores(@RequestParam String keycloakId) {
+        return new ApiResponse<List<ComunicadoDTO>>().ok(
+            comunicadoService.listarApenasGestores(keycloakId), 
+            "Comunicados de gestores listados com sucesso"
+        );
     }
 }

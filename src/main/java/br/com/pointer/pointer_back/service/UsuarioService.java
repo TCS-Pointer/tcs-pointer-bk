@@ -166,22 +166,6 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public ApiResponse<Page<UsuarioResponseDTO>> listarUsuarios(PageRequest pageRequest, String tipoUsuario,
             String setor, String status) {
-        Specification<Usuario> spec = Specification.where(null);
-
-        spec = spec.and((root, query, cb) -> {
-            assert query != null;
-            query.orderBy(cb.desc(root.get("dataCriacao")));
-            return null;
-        });
-
-        if (StringUtils.hasText(tipoUsuario)) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("tipoUsuario"), tipoUsuario));
-        }
-
-        if (StringUtils.hasText(setor)) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("setor"), setor));
-        }
-
         StatusUsuario statusUsuario = null;
         if (StringUtils.hasText(status)) {
             try {
@@ -400,7 +384,9 @@ public class UsuarioService {
         try {
             Usuario usuario = usuarioRepository.findByEmail(email)
                     .orElseThrow(() -> new UsuarioNaoEncontradoException(email));
-
+            if (usuario.getStatus().equals(StatusUsuario.INATIVO)) {
+                return ApiResponse.badRequest("Usuário inativo");
+            }
             emailService.sendVerificationCodeEmail(email, usuario.getNome());
             return ApiResponse.success("Código de verificação enviado com sucesso");
         } catch (UsuarioNaoEncontradoException e) {

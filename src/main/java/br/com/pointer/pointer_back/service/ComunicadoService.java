@@ -93,7 +93,6 @@ public class ComunicadoService {
             }
 
             List<ComunicadoDTO> comunicados = comunicadoRepository.findBySetoresContaining(setor).stream()
-                    .filter(comunicado -> !comunicado.isApenasGestores() || isGestor)
                     .map(comunicadoMapper::toDTO)
                     .collect(Collectors.toList());
             

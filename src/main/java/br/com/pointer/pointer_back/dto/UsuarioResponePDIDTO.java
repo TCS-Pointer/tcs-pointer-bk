@@ -3,7 +3,7 @@ package br.com.pointer.pointer_back.dto;
 import lombok.Data;
 
 @Data
-public class UsuarioSimpleDTO {
+public class UsuarioResponePDIDTO {
     
     private Long id;
     private String nome;

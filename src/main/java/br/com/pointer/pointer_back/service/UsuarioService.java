@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +31,7 @@ import br.com.pointer.pointer_back.dto.TipoUsuarioStatsDTO;
 import br.com.pointer.pointer_back.dto.TipoUsuarioStatsResponseDTO;
 import br.com.pointer.pointer_back.dto.UpdatePasswordDTO;
 import br.com.pointer.pointer_back.dto.UsuarioDTO;
+import br.com.pointer.pointer_back.dto.UsuarioResponePDIDTO;
 import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
 import br.com.pointer.pointer_back.dto.UsuarioUpdateDTO;
 import br.com.pointer.pointer_back.exception.KeycloakException;
@@ -561,5 +561,11 @@ public class UsuarioService {
             logger.error("Erro ao reenviar email de primeiro acesso: ", e);
             return ApiResponse.badRequest("Erro ao reenviar email: " + e.getMessage());
         }
+    }
+
+    @Transactional
+    public ApiResponse<List<UsuarioResponePDIDTO>> listarUsuariosFeedback() {
+        List<Usuario> usuarios = usuarioRepository.findAll();
+        return ApiResponse.mapList(usuarios, UsuarioResponePDIDTO.class, "Usuários encontrados com sucesso");
     }
 }

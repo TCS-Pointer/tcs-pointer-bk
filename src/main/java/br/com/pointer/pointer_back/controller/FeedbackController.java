@@ -3,7 +3,6 @@ package br.com.pointer.pointer_back.controller;
 import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.dto.FeedbackDTO;
 import br.com.pointer.pointer_back.dto.FeedbackResponseDTO;
-import br.com.pointer.pointer_back.dto.UsuarioSimpleDTO;
 import br.com.pointer.pointer_back.service.FeedbackService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -37,10 +36,5 @@ public class FeedbackController {
     @PostMapping("/novo")
     public ApiResponse<FeedbackResponseDTO> criarFeedback(@RequestBody FeedbackDTO feedbackDTO) {
         return feedbackService.criarFeedback(feedbackDTO);
-    }
-// usando o usuario simple dto pois nao precisa retornar todos os dados do usuario
-    @GetMapping("/listar-usuarios")
-    public ApiResponse<List<UsuarioSimpleDTO>> listarUsuarios() {
-        return feedbackService.listarUsuarios();
     }
 } 

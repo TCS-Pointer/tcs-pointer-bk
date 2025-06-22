@@ -33,9 +33,10 @@ public class EmailService {
     public void sendPasswordEmail(String recipientEmail, String password, String name) {
         logger.info("Iniciando envio de email com senha para: {}", recipientEmail);
         String templateId = "d-d833e5b4a1e84774b566a29a2bd2e984";
+        String subject = "Sua senha de acesso - Pointer";
         Map<String, String> dynamicData = Map.of("senha", password, "nome", name);
 
-        Mail mail = createTemplateMail(recipientEmail, templateId, dynamicData);
+        Mail mail = createTemplateMail(recipientEmail, templateId, subject, dynamicData);
         sendMail(mail);
         logger.info("Email com senha enviado com sucesso para: {}", recipientEmail);
     }
@@ -43,13 +44,14 @@ public class EmailService {
     public void sendPrimeiroAcessoEmail(String recipientEmail, String name, String token) {
         logger.info("Iniciando envio de email de primeiro acesso para: {}", recipientEmail);
         String templateId = "d-d09158bb610d47f58c3a85e11bdee6ad";
+        String subject = "Pointer";
         String link = frontendUrl + "/primeiro-acesso?token=" + token;
         Map<String, String> dynamicData = Map.of("nome", name, "link", link);
 
         logger.info("Link de primeiro acesso gerado: {}", link);
         logger.info("Template ID: {}", templateId);
 
-        Mail mail = createTemplateMail(recipientEmail, templateId, dynamicData);
+        Mail mail = createTemplateMail(recipientEmail, templateId, subject, dynamicData);
         sendMail(mail);
         logger.info("Email de primeiro acesso enviado com sucesso para: {}", recipientEmail);
     }
@@ -57,9 +59,10 @@ public class EmailService {
     public void sendVerificationCodeEmail(String recipientEmail, String name) {
         logger.info("Iniciando envio de email com código de verificação para: {}", recipientEmail);
         String templateId = "d-8b3d5327466b48239ddc170d54af8bce";
+        String subject = "Código de verificação - Pointer";
         String code = generateRandomCode();
         Map<String, String> dynamicData = Map.of("codigo", code, "nome", name);
-        Mail mail = createTemplateMail(recipientEmail, templateId, dynamicData);
+        Mail mail = createTemplateMail(recipientEmail, templateId, subject, dynamicData);
         verificationCodes.put(recipientEmail, code);
         sendMail(mail);
         logger.info("Email com código de verificação enviado com sucesso para: {}", recipientEmail);
@@ -76,12 +79,13 @@ public class EmailService {
         logger.info("Código de verificação removido para: {}", email);
     }
 
-    private Mail createTemplateMail(String recipientEmail, String templateId, Map<String, String> dynamicData) {
+    private Mail createTemplateMail(String recipientEmail, String templateId, String subject, Map<String, String> dynamicData) {
         logger.debug("Criando email com template {} para: {}", templateId, recipientEmail);
         Email from = new Email("no-replypointer@bol.com.br");
         Email to = new Email(recipientEmail);
         Mail mail = new Mail();
         mail.setFrom(from);
+        mail.setSubject(subject);
         mail.setTemplateId(templateId);
 
         Personalization personalization = new Personalization();
@@ -89,7 +93,7 @@ public class EmailService {
         dynamicData.forEach(personalization::addDynamicTemplateData);
 
         mail.addPersonalization(personalization);
-        logger.debug("Email criado com dados dinâmicos: {}", dynamicData);
+        logger.debug("Email criado com assunto: {} e dados dinâmicos: {}", subject, dynamicData);
         return mail;
     }
 

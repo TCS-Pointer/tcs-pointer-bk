@@ -562,4 +562,8 @@ public class UsuarioService {
             return ApiResponse.badRequest("Erro ao reenviar email: " + e.getMessage());
         }
     }
+
+    public UsuarioDTO toDTO(Usuario usuario) {
+        return modelMapper.map(usuario, UsuarioDTO.class);
+    }
 }

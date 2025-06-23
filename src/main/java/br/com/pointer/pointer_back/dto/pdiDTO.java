@@ -14,8 +14,15 @@ public class pdiDTO {
     private Long id;
     private String titulo;
     private String descricao;
+<<<<<<< HEAD
     private Long idDestinatario;
     private UsuarioResponseDTO destinatario;
+=======
+    private LocalDate dataInicio;
+    private LocalDate dataFim;
+    private Long idUsuario;
+    private Long idDestinatario;
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     private StatusPDI status;
     private LocalDate dtInicio;
     private LocalDate dtFim;

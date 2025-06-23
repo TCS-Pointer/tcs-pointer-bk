@@ -1,5 +1,6 @@
 package br.com.pointer.pointer_back;
 
+<<<<<<< HEAD
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -15,6 +16,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+=======
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.*;
+
+import java.util.List;
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -33,6 +41,7 @@ public class ApiResponse<T> {
         return status == 200;
     }
 
+<<<<<<< HEAD
     // Métodos estáticos para sucesso
     public static <T> ApiResponse<T> success(T content, String message) {
         return ApiResponse.<T>builder()
@@ -162,6 +171,8 @@ public class ApiResponse<T> {
     }
 
     // Métodos de instância (mantidos para compatibilidade)
+=======
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     public ApiResponse<T> ok(T content, String message) {
         return ApiResponse.<T>builder()
                 .message(message)
@@ -170,6 +181,23 @@ public class ApiResponse<T> {
                 .build();
     }
 
+<<<<<<< HEAD
+=======
+    public ApiResponse<T> notFound(String message) {
+        return ApiResponse.<T>builder()
+                .message(message)
+                .status(404)
+                .build();
+    }
+
+    public ApiResponse<T> badRequest(String message) {
+        return ApiResponse.<T>builder()
+                .message(message)
+                .status(400)
+                .build();
+    }
+
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     public ApiResponse<T> badRequest(String message, List<String> errors) {
         return ApiResponse.<T>builder()
                 .message(message)
@@ -185,4 +213,14 @@ public class ApiResponse<T> {
                 .content(content)
                 .build();
     }
+<<<<<<< HEAD
+=======
+
+    public ApiResponse<T> unprocessableEntity(String message) {
+        return ApiResponse.<T>builder()
+                .message(message)
+                .status(422)
+                .build();
+    }
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 }

@@ -2,6 +2,7 @@ package br.com.pointer.pointer_back.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+<<<<<<< HEAD
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -9,12 +10,18 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import br.com.pointer.pointer_back.ApiResponse;
 
+=======
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+<<<<<<< HEAD
 
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthorizationDeniedException(AuthorizationDeniedException ex) {
@@ -27,6 +34,8 @@ public class GlobalExceptionHandler {
         ApiResponse<Void> response = ApiResponse.error("Acesso negado. Você não tem permissão para acessar este recurso.", 403);
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
+=======
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 
     @ExceptionHandler(UsuarioJaExisteException.class)
     public ResponseEntity<Map<String, Object>> handleUsuarioJaExisteException(UsuarioJaExisteException ex) {

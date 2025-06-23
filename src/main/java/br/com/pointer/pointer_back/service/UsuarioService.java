@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import br.com.pointer.pointer_back.ApiResponse;
+<<<<<<< HEAD
 import br.com.pointer.pointer_back.dto.AlterarStatusDTO;
 import br.com.pointer.pointer_back.dto.KeycloakResponseDTO;
 import br.com.pointer.pointer_back.dto.PrimeiroAcessoDTO;
@@ -38,11 +39,24 @@ import br.com.pointer.pointer_back.exception.KeycloakException;
 import br.com.pointer.pointer_back.exception.SetorCargoInvalidoException;
 import br.com.pointer.pointer_back.exception.TokenExpiradoException;
 import br.com.pointer.pointer_back.exception.TokenInvalidoException;
+=======
+import br.com.pointer.pointer_back.dto.EmailDTO;
+import br.com.pointer.pointer_back.dto.KeycloakResponseDTO;
+import br.com.pointer.pointer_back.dto.UpdatePasswordDTO;
+import br.com.pointer.pointer_back.dto.UsuarioDTO;
+import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
+import br.com.pointer.pointer_back.exception.KeycloakException;
+import br.com.pointer.pointer_back.exception.SetorCargoInvalidoException;
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 import br.com.pointer.pointer_back.exception.UsuarioNaoEncontradoException;
 import br.com.pointer.pointer_back.model.StatusUsuario;
 import br.com.pointer.pointer_back.model.Usuario;
 import br.com.pointer.pointer_back.repository.UsuarioRepository;
+<<<<<<< HEAD
 import br.com.pointer.pointer_back.util.ValidationUtil;
+=======
+import br.com.pointer.pointer_back.util.ApiResponseUtil;
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 
 @Service
 public class UsuarioService {
@@ -55,25 +69,38 @@ public class UsuarioService {
     private final EmailService emailService;
     private final Keycloak keycloak;
     private final String realm;
+<<<<<<< HEAD
     private final SetorCargoService setorCargoService;
     private final PrimeiroAcessoService primeiroAcessoService;
+=======
+    private final ApiResponseUtil apiResponseUtil;
+    private final SetorCargoService setorCargoService;
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 
     public UsuarioService(
             UsuarioRepository usuarioRepository,
             KeycloakAdminService keycloakAdminService,
             ModelMapper modelMapper,
             EmailService emailService,
+            ApiResponseUtil apiResponseUtil,
             Keycloak keycloak,
             SetorCargoService setorCargoService,
+<<<<<<< HEAD
             PrimeiroAcessoService primeiroAcessoService,
+=======
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
             @Value("${keycloak.realm}") String realm) {
         this.usuarioRepository = usuarioRepository;
         this.keycloakAdminService = keycloakAdminService;
         this.modelMapper = modelMapper;
         this.emailService = emailService;
+        this.apiResponseUtil = apiResponseUtil;
         this.keycloak = keycloak;
         this.setorCargoService = setorCargoService;
+<<<<<<< HEAD
         this.primeiroAcessoService = primeiroAcessoService;
+=======
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
         this.realm = realm;
     }
 
@@ -81,6 +108,7 @@ public class UsuarioService {
     public ApiResponse<UsuarioResponseDTO> criarUsuario(UsuarioDTO dto) {
         try {
             if (usuarioRepository.existsByEmail(dto.getEmail())) {
+<<<<<<< HEAD
                 return ApiResponse.badRequest("Já existe um usuário com este email");
             }
 
@@ -160,13 +188,79 @@ public class UsuarioService {
         } catch (Exception e) {
             logger.error("Erro ao criar usuário: ", e);
             return ApiResponse.badRequest("Erro ao criar usuário: " + e.getMessage());
+=======
+                return apiResponseUtil.error("Já existe um usuário com este email", 400);
+            }
+
+            // Validar setor e cargo
+            setorCargoService.validarSetorECargo(dto.getSetor(), dto.getCargo());
+
+            String senhaPura = dto.getSenha();
+            if (senhaPura == null) {
+                senhaPura = gerarSenhaAleatoria();
+                enviarSenhaPorEmail(dto.getEmail(), senhaPura, dto.getNome());
+            }
+
+            try {
+                // Primeiro criamos no Keycloak
+                KeycloakResponseDTO keycloakResponse = keycloakAdminService.createUserAndReturnId(
+                        dto.getNome(), dto.getEmail(), senhaPura);
+
+                if (!keycloakResponse.isSuccess()) {
+                    return apiResponseUtil.error(keycloakResponse.getErrorMessage(), keycloakResponse.getStatusCode());
+                }
+
+                String userId = (String) keycloakResponse.getData();
+                keycloakAdminService.setUserPassword(userId, senhaPura);
+                keycloakAdminService.assignRolesToUser(userId, obterRolesPorTipo(dto.getTipoUsuario()));
+
+                // Depois criamos no banco de dados
+                Usuario usuario = new Usuario();
+                modelMapper.map(dto, usuario);
+                usuario.setKeycloakId(userId);
+                usuario = usuarioRepository.save(usuario);
+
+                UsuarioResponseDTO responseDTO = modelMapper.map(usuario, UsuarioResponseDTO.class);
+                return apiResponseUtil.success(responseDTO, "Usuário criado com sucesso");
+            } catch (KeycloakException e) {
+                logger.error("Erro ao criar usuário no Keycloak: ", e);
+                return apiResponseUtil.error(e.getErrorMessage(), e.getStatusCode());
+            }
+        } catch (SetorCargoInvalidoException e) {
+            logger.error("Erro de validação de setor/cargo: ", e);
+            return apiResponseUtil.error(e.getMessage(), 400);
+        } catch (Exception e) {
+            logger.error("Erro ao criar usuário: ", e);
+            return apiResponseUtil.error("Erro ao criar usuário: " + e.getMessage(), 400);
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
         }
     }
 
     @Transactional(readOnly = true)
+<<<<<<< HEAD
     public ApiResponse<Page<UsuarioResponseDTO>> listarUsuarios(PageRequest pageRequest, String tipoUsuario,
             String setor, String status) {
         StatusUsuario statusUsuario = null;
+=======
+    public ApiResponse<Page<UsuarioResponseDTO>> listarUsuarios(PageRequest pageRequest, String setor, String perfil,
+            String status) {
+        Specification<Usuario> spec = Specification.where(null);
+
+        spec = spec.and((root, query, cb) -> {
+            assert query != null;
+            query.orderBy(cb.desc(root.get("dataCriacao")));
+            return null;
+        });
+
+        if (StringUtils.hasText(setor)) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("setor"), setor));
+        }
+
+        if (StringUtils.hasText(perfil)) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("tipoUsuario"), perfil));
+        }
+
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
         if (StringUtils.hasText(status)) {
             try {
                 statusUsuario = StatusUsuario.valueOf(status.toUpperCase());
@@ -175,6 +269,7 @@ public class UsuarioService {
             }
         }
 
+<<<<<<< HEAD
         Page<Usuario> usuarios = usuarioRepository.findByFilters(tipoUsuario, setor, statusUsuario, pageRequest);
         return ApiResponse.mapPage(usuarios, UsuarioResponseDTO.class, "Usuários listados com sucesso");
     }
@@ -191,6 +286,21 @@ public class UsuarioService {
             if (usuario.getStatus().equals(StatusUsuario.ATIVO) &&
                     usuario.getEmail().equals(alterarStatusDTO.getEmailSend())) {
                 return ApiResponse.badRequest("Você não pode desabilitar seu próprio perfil");
+=======
+        Page<Usuario> usuarios = usuarioRepository.findAll(spec, pageRequest);
+        return apiResponseUtil.mapPage(usuarios, UsuarioResponseDTO.class, "Usuários listados com sucesso");
+    }
+
+    @Transactional
+    public ApiResponse<Void> alternarStatusUsuarioPorEmail(EmailDTO emailDTO) {
+        try {
+            Usuario usuario = usuarioRepository.findByEmail(emailDTO.getEmail())
+                    .orElseThrow(() -> new UsuarioNaoEncontradoException(emailDTO.getEmail()));
+
+            if (usuario.getStatus().equals(StatusUsuario.ATIVO) && 
+                usuario.getEmail().equals(emailDTO.getEmail())) {
+                return apiResponseUtil.error("Você não pode desabilitar seu próprio perfil", 400);
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
             }
 
             try {
@@ -213,6 +323,7 @@ public class UsuarioService {
                                 "KEYCLOAK_ENABLE_ERROR");
                     }
                     usuario.setStatus(StatusUsuario.ATIVO);
+<<<<<<< HEAD
                     logger.info("Usuário ativado: {}", usuario.getEmail());
                     // ususario ativado por tal email
 
@@ -220,6 +331,12 @@ public class UsuarioService {
 
                 usuarioRepository.save(usuario);
                 return ApiResponse.success("Status do usuário alterado com sucesso");
+=======
+                }
+
+                usuarioRepository.save(usuario);
+                return apiResponseUtil.success(null, "Status do usuário alterado com sucesso");
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
             } catch (KeycloakException e) {
                 logger.error("Erro ao alterar status no Keycloak: {}", e.getMessage(), e);
                 throw new KeycloakException(
@@ -230,7 +347,11 @@ public class UsuarioService {
         } catch (UsuarioNaoEncontradoException e) {
             logger.error("Usuário não encontrado: {}", e.getMessage(), e);
             throw new KeycloakException(
+<<<<<<< HEAD
                     "Usuário não encontrado com o email: " + alterarStatusDTO.getEmailChangeStatus(),
+=======
+                    "Usuário não encontrado com o email: " + emailDTO.getEmail(),
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
                     404,
                     "USER_NOT_FOUND");
         } catch (Exception e) {
@@ -255,6 +376,7 @@ public class UsuarioService {
     }
 
     @Transactional
+<<<<<<< HEAD
     public ApiResponse<UsuarioResponseDTO> atualizarUsuario(UsuarioUpdateDTO dto, String keycloakId) {
         try {
 
@@ -342,10 +464,74 @@ public class UsuarioService {
                 keycloakAdminService.assignRolesToUser(userId, novasRoles);
             }
 
+=======
+    public ApiResponse<UsuarioResponseDTO> atualizarUsuarioComSincronizacaoKeycloak(UsuarioDTO dto, String id) {
+        try {
+            Usuario usuario = usuarioRepository.findById(Long.parseLong(id))
+                    .orElseThrow(() -> new UsuarioNaoEncontradoException(id));
+
+            UserRepresentation userRepresentation = criarUserRepresentation(dto);
+            atualizarUsuarioNoKeycloak(userRepresentation);
+
+            modelMapper.map(dto, usuario);
+            usuario = usuarioRepository.save(usuario);
+
+            return apiResponseUtil.map(usuario, UsuarioResponseDTO.class, "Usuário atualizado com sucesso");
+        } catch (UsuarioNaoEncontradoException e) {
+            return apiResponseUtil.error(e.getMessage(), 404);
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
         } catch (Exception e) {
             logger.error("Erro ao atualizar usuário no Keycloak: ", e);
-            throw new RuntimeException("Erro ao atualizar usuário no Keycloak: " + e.getMessage());
+            return apiResponseUtil.error("Erro ao atualizar usuário: " + e.getMessage(), 400);
         }
+<<<<<<< HEAD
+=======
+    }
+
+    private UserRepresentation criarUserRepresentation(UsuarioDTO dto) {
+        UserRepresentation user = new UserRepresentation();
+        user.setEmail(dto.getEmail());
+        user.setUsername(dto.getEmail());
+        user.setEnabled(dto.getStatus() == StatusUsuario.ATIVO);
+
+        // Configurar nome e sobrenome
+        String[] nomeCompleto = dto.getNome().split(" ", 2);
+        user.setFirstName(nomeCompleto[0]);
+        user.setLastName(nomeCompleto.length > 1 ? nomeCompleto[1] : "");
+
+        // Configurar atributos adicionais se necessário
+        Map<String, List<String>> attributes = new HashMap<>();
+        attributes.put("setor", Collections.singletonList(dto.getSetor()));
+        attributes.put("tipoUsuario", Collections.singletonList(dto.getTipoUsuario()));
+        user.setAttributes(attributes);
+
+        return user;
+    }
+
+    private void atualizarUsuarioNoKeycloak(UserRepresentation userRepresentation) {
+        // Busca o usuário no Keycloak pelo email que está no DTO (email atual)
+        List<UserRepresentation> users = keycloak.realm(realm).users().search(userRepresentation.getEmail());
+
+        if (users.isEmpty()) {
+            logger.error("Usuário não encontrado no Keycloak com email: {}", userRepresentation.getEmail());
+            throw new RuntimeException("Usuário não encontrado no Keycloak");
+        }
+
+        String userId = users.get(0).getId();
+        logger.info("Usuário encontrado no Keycloak com ID: {}", userId);
+
+        // Atualizar informações básicas do usuário
+        keycloakAdminService.updateUser(userId, userRepresentation);
+
+        // Atualizar roles
+        Set<String> rolesAtuais = obterRolesAtuaisDoUsuario(userId);
+        if (!rolesAtuais.isEmpty()) {
+            keycloakAdminService.removeRolesFromUser(userId, rolesAtuais);
+        }
+
+        Set<String> novasRoles = obterRolesPorTipo(userRepresentation.getAttributes().get("tipoUsuario").get(0));
+        keycloakAdminService.assignRolesToUser(userId, novasRoles);
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     }
 
     private Set<String> obterRolesAtuaisDoUsuario(String userId) {
@@ -377,6 +563,7 @@ public class UsuarioService {
         enviarSenhaPorEmail(email, novaSenha, usuario.getNome());
         atualizarSenhaNoKeycloak(email, novaSenha);
 
+<<<<<<< HEAD
         return ApiResponse.success("Senha redefinida com sucesso");
     }
 
@@ -408,6 +595,9 @@ public class UsuarioService {
             logger.error("Erro ao verificar código: ", e);
             return ApiResponse.internalServerError("Erro ao verificar código");
         }
+=======
+        return apiResponseUtil.success(null, "Senha redefinida com sucesso");
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     }
 
     private void enviarSenhaPorEmail(String email, String senha, String nome) {
@@ -423,6 +613,7 @@ public class UsuarioService {
                     usuario.getKeycloakId(), updatePasswordDTO.getSenha());
 
             if (!keycloakResponse.isSuccess()) {
+<<<<<<< HEAD
                 return ApiResponse.error(keycloakResponse.getErrorMessage(), keycloakResponse.getStatusCode());
             }
 
@@ -436,6 +627,19 @@ public class UsuarioService {
         } catch (Exception e) {
             logger.error("Erro ao atualizar senha do usuário: ", e);
             return ApiResponse.badRequest("Erro ao atualizar senha do usuário: " + e.getMessage());
+=======
+                return apiResponseUtil.error(keycloakResponse.getErrorMessage(), keycloakResponse.getStatusCode());
+            }
+
+            return apiResponseUtil.success(null, "Senha atualizada com sucesso");
+        } catch (UsuarioNaoEncontradoException e) {
+            return apiResponseUtil.error(e.getMessage(), 404);
+        } catch (KeycloakException e) {
+            return apiResponseUtil.error(e.getErrorMessage(), e.getStatusCode());
+        } catch (Exception e) {
+            logger.error("Erro ao atualizar senha do usuário: ", e);
+            return apiResponseUtil.error("Erro ao atualizar senha do usuário: " + e.getMessage(), 400);
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
         }
     }
 
@@ -457,6 +661,7 @@ public class UsuarioService {
         }
     }
 
+<<<<<<< HEAD
     public ApiResponse<Void> verificarEmailDisponibilidade(String email) {
         try {
             boolean emailExiste = usuarioRepository.existsByEmail(email);
@@ -467,6 +672,15 @@ public class UsuarioService {
         } catch (Exception e) {
             logger.error("Erro ao verificar disponibilidade do email: ", e);
             return ApiResponse.internalServerError("Erro ao verificar email");
+=======
+    public Usuario findByEmail(String email) {
+        try {
+            return usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new UsuarioNaoEncontradoException(email));
+        } catch (Exception e) {
+            logger.error("Erro ao buscar usuário por email: ", e);
+            return null;
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
         }
     }
 
@@ -474,6 +688,7 @@ public class UsuarioService {
         try {
             Usuario usuario = usuarioRepository.findByKeycloakId(keycloakId)
                     .orElseThrow(() -> new UsuarioNaoEncontradoException(keycloakId));
+<<<<<<< HEAD
             return ApiResponse.map(usuario, UsuarioResponseDTO.class, "Usuário encontrado com sucesso");
         } catch (UsuarioNaoEncontradoException e) {
             return ApiResponse.notFound(e.getMessage());
@@ -565,5 +780,11 @@ public class UsuarioService {
 
     public UsuarioDTO toDTO(Usuario usuario) {
         return modelMapper.map(usuario, UsuarioDTO.class);
+=======
+            return apiResponseUtil.map(usuario, UsuarioResponseDTO.class, "Usuário encontrado com sucesso");
+        } catch (UsuarioNaoEncontradoException e) {
+            return apiResponseUtil.error(e.getMessage(), 404);
+        }
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     }
 }

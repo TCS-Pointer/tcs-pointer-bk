@@ -1,7 +1,14 @@
 package br.com.pointer.pointer_back.auth;
 
+<<<<<<< HEAD
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+=======
+import org.keycloak.admin.client.Keycloak;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -38,18 +45,30 @@ public class TokenController {
 
 
     @PostMapping
+<<<<<<< HEAD
     public ApiResponse<TokenResponse> token(@RequestBody LoginRequest loginRequest) {
+=======
+    public ApiResponse<TokenResponse> token(@RequestBody User user) {
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
         try {
             HttpHeaders headers = new HttpHeaders();
             RestTemplate restTemplate = new RestTemplate();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
             MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+<<<<<<< HEAD
             formData.add("client_id", clientId);
             formData.add("client_secret", clientSecret);
             formData.add("username", loginRequest.username());
             formData.add("password", loginRequest.password());
             formData.add("grant_type", "password");
+=======
+            formData.add("client_id", user.clientId());
+            formData.add("client_secret", clientSecret);
+            formData.add("username", user.username());
+            formData.add("password", user.password());
+            formData.add("grant_type", user.grantType());
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
             formData.add("scope", "openid");
             formData.add("expires_in", "100000");
 
@@ -57,7 +76,10 @@ public class TokenController {
             String tokenUrl = String.format("%s/realms/%s/protocol/openid-connect/token", authServerUrl, realm);
 
             ResponseEntity<TokenResponse> response = restTemplate.postForEntity(tokenUrl, entity, TokenResponse.class);
+<<<<<<< HEAD
             logger.info("Login do username: {}", loginRequest.username());
+=======
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
             return new ApiResponse<TokenResponse>().ok(response.getBody(), "Token gerado com sucesso");
         } catch (HttpClientErrorException e) {
             logger.error("Erro ao gerar token: {}", e.getMessage(), e);

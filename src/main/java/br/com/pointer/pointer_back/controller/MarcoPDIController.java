@@ -19,31 +19,94 @@ public class MarcoPDIController {
 
     @PostMapping
     @PreAuthorize("hasRole('admin') or hasRole('gestor')")
+<<<<<<< HEAD
     public ApiResponse<MarcoPDIDTO> criar(@Valid @RequestBody MarcoPDIDTO marcoPDIDTO) {
         return marcoPDIService.criar(marcoPDIDTO);
+=======
+    public ResponseEntity<ApiResponse<MarcoPDIDTO>> criar(@Valid @RequestBody MarcoPDIDTO marcoPDIDTO) {
+        try {
+            MarcoPDIDTO marcoCriado = marcoPDIService.criar(marcoPDIDTO);
+            return ResponseEntity.status(201)
+                    .body(new ApiResponse<MarcoPDIDTO>().ok(marcoCriado, "Marco PDI criado com sucesso"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiResponse<MarcoPDIDTO>().badRequest(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<MarcoPDIDTO>().badRequest("Erro ao criar Marco PDI: " + e.getMessage()));
+        }
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     }
 
     @GetMapping("/pdi/{pdiId}")
     @PreAuthorize("hasRole('usuario') or hasRole('admin') or hasRole('gestor')")
+<<<<<<< HEAD
     public ApiResponse<List<MarcoPDIDTO>> listarPorPDI(@PathVariable Long pdiId) {
         return marcoPDIService.listarPorPDI(pdiId);
+=======
+    public ResponseEntity<ApiResponse<List<MarcoPDIDTO>>> listarPorPDI(@PathVariable Long pdiId) {
+        try {
+            List<MarcoPDIDTO> marcos = marcoPDIService.listarPorPDI(pdiId);
+            return ResponseEntity
+                    .ok(new ApiResponse<List<MarcoPDIDTO>>().ok(marcos, "Marcos PDI listados com sucesso"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<List<MarcoPDIDTO>>().badRequest("Erro ao listar Marcos PDI: " + e.getMessage()));
+        }
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('usuario') or hasRole('admin') or hasRole('gestor')")
+<<<<<<< HEAD
     public ApiResponse<MarcoPDIDTO> buscarPorId(@PathVariable Long id) {
         return marcoPDIService.buscarPorId(id);
+=======
+    public ResponseEntity<ApiResponse<MarcoPDIDTO>> buscarPorId(@PathVariable Long id) {
+        try {
+            MarcoPDIDTO marco = marcoPDIService.buscarPorId(id);
+            return ResponseEntity.ok(new ApiResponse<MarcoPDIDTO>().ok(marco, "Marco PDI encontrado com sucesso"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<MarcoPDIDTO>().badRequest("Erro ao buscar Marco PDI: " + e.getMessage()));
+        }
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('admin') or hasRole('gestor')")
+<<<<<<< HEAD
     public ApiResponse<MarcoPDIDTO> atualizar(@PathVariable Long id, @RequestBody MarcoPDIDTO marcoPDIDTO) {
         return marcoPDIService.atualizar(id, marcoPDIDTO);
+=======
+    public ResponseEntity<ApiResponse<MarcoPDIDTO>> atualizar(@PathVariable Long id,
+            @RequestBody MarcoPDIDTO marcoPDIDTO) {
+        try {
+            MarcoPDIDTO marcoAtualizado = marcoPDIService.atualizar(id, marcoPDIDTO);
+            return ResponseEntity
+                    .ok(new ApiResponse<MarcoPDIDTO>().ok(marcoAtualizado, "Marco PDI atualizado com sucesso"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiResponse<MarcoPDIDTO>().badRequest(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<MarcoPDIDTO>().badRequest("Erro ao atualizar Marco PDI: " + e.getMessage()));
+        }
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('admin') or hasRole('gestor')")
+<<<<<<< HEAD
     public ApiResponse<Void> deletar(@PathVariable Long id) {
         return marcoPDIService.deletar(id);
+=======
+    public ResponseEntity<ApiResponse<Void>> deletar(@PathVariable Long id) {
+        try {
+            marcoPDIService.deletar(id);
+            return ResponseEntity.ok(new ApiResponse<Void>().ok(null, "Marco PDI deletado com sucesso"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<Void>().badRequest("Erro ao deletar Marco PDI: " + e.getMessage()));
+        }
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     }
 }

@@ -22,9 +22,14 @@ public class PDI {
     @Column(nullable = false)
     private String descricao;
 
+<<<<<<< HEAD
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_destinatario", nullable = false)
     private Usuario destinatario;
+=======
+    @Column(name = "idDestinatario")
+    private Long idDestinatario;
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "varchar(20)")

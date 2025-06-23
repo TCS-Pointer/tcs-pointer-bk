@@ -12,9 +12,13 @@ import java.util.List;
 public interface PDIRepository extends JpaRepository<PDI, Long> {
     List<PDI> findByIdUsuario(Long idUsuario);
 
+<<<<<<< HEAD
     @Query("SELECT p FROM PDI p WHERE p.destinatario.id = :idDestinatario")
     List<PDI> findByIdDestinatario(@Param("idDestinatario") Long idDestinatario);
 
     @Query("SELECT p FROM PDI p JOIN FETCH p.destinatario")
     List<PDI> findAllWithDestinatario();
+=======
+    List<PDI> findByIdDestinatario(Long idDestinatario);
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 }

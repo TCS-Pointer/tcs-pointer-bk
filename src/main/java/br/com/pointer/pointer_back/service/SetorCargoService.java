@@ -10,19 +10,28 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+<<<<<<< HEAD
 import br.com.pointer.pointer_back.ApiResponse;
+=======
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 import br.com.pointer.pointer_back.dto.SetorCargoDTO;
 import br.com.pointer.pointer_back.exception.SetorCargoInvalidoException;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
+<<<<<<< HEAD
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+=======
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 
 @Service
 public class SetorCargoService {
 
+<<<<<<< HEAD
     private static final Logger logger = LoggerFactory.getLogger(SetorCargoService.class);
 
+=======
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     @Getter
     private SetorCargoDTO dados;
 
@@ -37,6 +46,7 @@ public class SetorCargoService {
         }
     }
 
+<<<<<<< HEAD
     public ApiResponse<SetorCargoDTO> listarSetoresECargos() {
         try {
             return ApiResponse.success(dados, "Setores e cargos listados com sucesso");
@@ -46,6 +56,8 @@ public class SetorCargoService {
         }
     }
 
+=======
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     public void validarSetorECargo(String setor, String cargo) {
         if (!isSetorValido(setor)) {
             throw new SetorCargoInvalidoException("Setor inválido: " + setor);

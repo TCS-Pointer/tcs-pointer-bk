@@ -1,9 +1,16 @@
 package br.com.pointer.pointer_back.exception;
 
+<<<<<<< HEAD
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+=======
+import br.com.pointer.pointer_back.dto.KeycloakResponseDTO;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
+import org.keycloak.admin.client.resource.UserResource;
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -13,8 +20,14 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+<<<<<<< HEAD
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+=======
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 
 @ControllerAdvice
 public class KeycloakExceptionHandler {

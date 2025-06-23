@@ -11,7 +11,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+<<<<<<< HEAD
 import java.util.List;
+=======
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
 import java.util.Optional;
 
 @Repository
@@ -19,6 +22,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>, JpaSpec
 
     Optional<Usuario> findByKeycloakId(String keycloakId);
     Optional<Usuario> findByEmail(String email);
+<<<<<<< HEAD
+=======
+    boolean existsByKeycloakId(String keycloakId);
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     boolean existsByEmail(String email);
 
     @Query("SELECT u FROM Usuario u WHERE u.setor = :setor AND u.keycloakId != :keycloakId")
@@ -27,12 +34,20 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>, JpaSpec
     @Query("SELECT u FROM Usuario u WHERE " +
            "(:tipoUsuario IS NULL OR u.tipoUsuario = :tipoUsuario) AND " +
            "(:setor IS NULL OR u.setor = :setor) AND " +
+<<<<<<< HEAD
            "(:status IS NULL OR u.status = :status) " +
            "ORDER BY u.dataCriacao DESC")
+=======
+           "(:cargo IS NULL OR u.cargo = :cargo)")
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
     Page<Usuario> findByFilters(
         @Param("tipoUsuario") String tipoUsuario,
         @Param("setor") String setor,
+<<<<<<< HEAD
         @Param("status") StatusUsuario status,
+=======
+        @Param("cargo") String cargo,
+>>>>>>> 3c46f92a3eab74bba1b2fc31a3bd29ad2f03f3ce
         Pageable pageable
     );
 

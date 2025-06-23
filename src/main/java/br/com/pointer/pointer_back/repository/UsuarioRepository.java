@@ -28,7 +28,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>, JpaSpec
            "(:tipoUsuario IS NULL OR u.tipoUsuario = :tipoUsuario) AND " +
            "(:setor IS NULL OR u.setor = :setor) AND " +
            "(:status IS NULL OR u.status = :status) " +
-           "AND (:nome IS NULL OR :nome = '' OR u.nome LIKE CONCAT('%', :nome, '%')) " +
+           "AND (:nome IS NULL OR :nome = '' OR LOWER(u.nome) LIKE LOWER(CONCAT('%', :nome, '%'))) " +
            "ORDER BY u.dataCriacao DESC")
     Page<Usuario> findByFilters(
         @Param("tipoUsuario") String tipoUsuario,

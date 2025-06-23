@@ -175,7 +175,7 @@ public class UsuarioService {
             }
         }
 
-        String nomeFiltro = StringUtils.hasText(nome) ? nome : null;
+        String nomeFiltro = StringUtils.hasText(nome) ? nome.toLowerCase() : null;
 
         Page<Usuario> usuarios = usuarioRepository.findByFilters(tipoUsuario, setor, statusUsuario, nomeFiltro, pageRequest);
         return ApiResponse.mapPage(usuarios, UsuarioResponseDTO.class, "Usuários listados com sucesso");

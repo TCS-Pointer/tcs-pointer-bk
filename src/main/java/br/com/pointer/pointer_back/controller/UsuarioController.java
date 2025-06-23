@@ -58,9 +58,10 @@ public class UsuarioController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String tipoUsuario,
             @RequestParam(required = false) String setor,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String nome) {
         return usuarioService.listarUsuarios(
-                PageRequest.of(page, size), tipoUsuario, setor, status);
+                PageRequest.of(page, size), tipoUsuario, setor, status, nome);
     }
 
     @PutMapping("/alterar-status")

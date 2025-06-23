@@ -165,7 +165,7 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public ApiResponse<Page<UsuarioResponseDTO>> listarUsuarios(PageRequest pageRequest, String tipoUsuario,
-            String setor, String status) {
+            String setor, String status, String nome) {
         StatusUsuario statusUsuario = null;
         if (StringUtils.hasText(status)) {
             try {
@@ -175,7 +175,9 @@ public class UsuarioService {
             }
         }
 
-        Page<Usuario> usuarios = usuarioRepository.findByFilters(tipoUsuario, setor, statusUsuario, pageRequest);
+        String nomeFiltro = StringUtils.hasText(nome) ? nome : null;
+
+        Page<Usuario> usuarios = usuarioRepository.findByFilters(tipoUsuario, setor, statusUsuario, nomeFiltro, pageRequest);
         return ApiResponse.mapPage(usuarios, UsuarioResponseDTO.class, "Usuários listados com sucesso");
     }
 

@@ -2,6 +2,7 @@ package br.com.pointer.pointer_back.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -66,6 +67,23 @@ public class GlobalExceptionHandler {
         body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         body.put("error", "Erro no Keycloak");
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        
+        String message = "Erro ao processar dados da requisição";
+        
+        if (ex.getMessage() != null && ex.getMessage().contains("TipoFeedback")) {
+            message = "Tipo de feedback inválido. Valores aceitos: POSITIVO, CONSTRUTIVO";
+        }
+        
+        body.put("message", message);
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", "Dados inválidos");
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)

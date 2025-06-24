@@ -1,5 +1,6 @@
 package br.com.pointer.pointer_back.model;
 
+import br.com.pointer.pointer_back.enums.TipoFeedback;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -38,9 +39,6 @@ public class Feedback {
     @Column(name = "dt_envio", nullable = false)
     private LocalDateTime dtEnvio;
 
-    @Column(name = "destinatario", length = 45, nullable = false)
-    private String destinatario;
-
     @Column(name = "pontos_fortes", length = 45)
     private String pontosFortes;
 
@@ -48,12 +46,12 @@ public class Feedback {
     private String pontosMelhoria;
 
     @Column(name = "tipo_feedback", length = 45, nullable = false)
-    private String tipoFeedback;
+    private TipoFeedback tipoFeedback;
 
     @Column(name = "id_usuario_destinatario", nullable = false)
     private Long idUsuarioDestinatario;
 
-    @Column(name = "id_usuario_remetente", nullable = false)
+    @Column(name = "id_usuario_remetente")
     private Long idUsuarioRemetente;
 
     @PrePersist

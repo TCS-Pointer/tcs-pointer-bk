@@ -37,6 +37,12 @@ public class Usuario {
     @Column(nullable = false)
     private StatusUsuario status = StatusUsuario.ATIVO;
 
+    @Column(name = "two_factor_enabled", nullable = false)
+    private Boolean twoFactorEnabled = false;
+
+    @Column(name = "secret_key", length = 32)
+    private String secretKey;
+
     @PrePersist
     protected void onCreate() {
         dataCriacao = LocalDateTime.now();

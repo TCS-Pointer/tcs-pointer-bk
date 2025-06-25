@@ -22,6 +22,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.dto.AlterarStatusDTO;
@@ -34,6 +36,9 @@ import br.com.pointer.pointer_back.dto.UsuarioDTO;
 import br.com.pointer.pointer_back.dto.UsuarioResponePDIDTO;
 import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
 import br.com.pointer.pointer_back.dto.UsuarioUpdateDTO;
+import br.com.pointer.pointer_back.dto.TwoFactorSetupDTO;
+import br.com.pointer.pointer_back.dto.TwoFactorVerifyDTO;
+import br.com.pointer.pointer_back.dto.TwoFactorStatusDTO;
 import br.com.pointer.pointer_back.exception.KeycloakException;
 import br.com.pointer.pointer_back.exception.SetorCargoInvalidoException;
 import br.com.pointer.pointer_back.exception.TokenExpiradoException;
@@ -43,6 +48,8 @@ import br.com.pointer.pointer_back.model.StatusUsuario;
 import br.com.pointer.pointer_back.model.Usuario;
 import br.com.pointer.pointer_back.repository.UsuarioRepository;
 import br.com.pointer.pointer_back.util.ValidationUtil;
+import br.com.pointer.pointer_back.service.TwoFactorService;
+import br.com.pointer.pointer_back.util.UserUtil;
 
 @Service
 public class UsuarioService {
@@ -57,6 +64,7 @@ public class UsuarioService {
     private final String realm;
     private final SetorCargoService setorCargoService;
     private final PrimeiroAcessoService primeiroAcessoService;
+    private final TwoFactorService twoFactorService;
 
     public UsuarioService(
             UsuarioRepository usuarioRepository,
@@ -66,6 +74,7 @@ public class UsuarioService {
             Keycloak keycloak,
             SetorCargoService setorCargoService,
             PrimeiroAcessoService primeiroAcessoService,
+            TwoFactorService twoFactorService,
             @Value("${keycloak.realm}") String realm) {
         this.usuarioRepository = usuarioRepository;
         this.keycloakAdminService = keycloakAdminService;
@@ -74,6 +83,7 @@ public class UsuarioService {
         this.keycloak = keycloak;
         this.setorCargoService = setorCargoService;
         this.primeiroAcessoService = primeiroAcessoService;
+        this.twoFactorService = twoFactorService;
         this.realm = realm;
     }
 
@@ -564,10 +574,140 @@ public class UsuarioService {
             return ApiResponse.badRequest("Erro ao reenviar email: " + e.getMessage());
         }
     }
-
     @Transactional
     public ApiResponse<List<UsuarioResponePDIDTO>> listarUsuariosFeedback(String keycloakId) {
         List<Usuario> usuarios = usuarioRepository.findByStatusAndKeycloakIdNot(StatusUsuario.ATIVO, keycloakId);
         return ApiResponse.mapList(usuarios, UsuarioResponePDIDTO.class, "Usuários encontrados com sucesso");
+    }
+
+    @Transactional
+    public ApiResponse<TwoFactorSetupDTO> setupTwoFactor(String keycloakId) {
+        try {
+            Usuario usuario = usuarioRepository.findByKeycloakId(keycloakId)
+                    .orElseThrow(() -> new UsuarioNaoEncontradoException(keycloakId));   
+
+            String secretKey = twoFactorService.generateSecretKey();    
+
+            String qrCodeUrl = twoFactorService.generateQRCodeUrl(secretKey, usuario.getEmail(), "Pointer");
+
+            usuario.setSecretKey(secretKey);
+            usuario.setTwoFactorEnabled(false);
+            usuarioRepository.save(usuario);
+
+            TwoFactorSetupDTO setupDTO = new TwoFactorSetupDTO();
+            setupDTO.setQrCodeUrl(qrCodeUrl);
+            setupDTO.setSecretKey(secretKey);
+
+            return ApiResponse.success(setupDTO, "2FA configurado com sucesso. Escaneie o QR Code e confirme com o código.");
+        } catch (UsuarioNaoEncontradoException e) {
+            logger.error("Usuário não encontrado: {}", keycloakId);
+            return ApiResponse.notFound(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Erro ao configurar 2FA: ", e);
+            return ApiResponse.error("Erro ao configurar 2FA", 500);
+        }
+    }
+
+    @Transactional
+    public ApiResponse<Void> verifyTwoFactor(TwoFactorVerifyDTO verifyDTO) {
+        try {
+            Usuario usuario = usuarioRepository.findByEmail(verifyDTO.getEmail())
+                    .orElseThrow(() -> new UsuarioNaoEncontradoException(verifyDTO.getEmail()));
+
+            if (!usuario.getTwoFactorEnabled()) {
+                return ApiResponse.badRequest("2FA não está habilitado para este usuário");
+            }
+
+            // Verificar se o código é válido
+            boolean isValid = twoFactorService.validateCode(usuario.getSecretKey(), verifyDTO.getCode());
+            
+            if (isValid) {
+                return ApiResponse.success(null, "Código 2FA válido");
+            } else {
+                return ApiResponse.badRequest("Código 2FA inválido");
+            }
+        } catch (UsuarioNaoEncontradoException e) {
+            logger.error("Usuário não encontrado: {}", verifyDTO.getEmail());
+            return ApiResponse.notFound(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Erro ao verificar 2FA: ", e);
+            return ApiResponse.error("Erro ao verificar 2FA", 500);
+        }
+    }
+
+    @Transactional
+    public ApiResponse<Void> activateTwoFactor(String keycloakId, TwoFactorVerifyDTO verifyDTO) {
+        try {
+            Usuario usuario = usuarioRepository.findByKeycloakId(keycloakId)
+                    .orElseThrow(() -> new UsuarioNaoEncontradoException(keycloakId));
+
+            if (usuario.getSecretKey() == null) {
+                return ApiResponse.badRequest("2FA não foi configurado. Configure primeiro.");
+            }
+
+            if (usuario.getTwoFactorEnabled()) {
+                return ApiResponse.badRequest("2FA já está ativo para este usuário");
+            }
+
+            // Verificar se o código é válido
+            boolean isValid = twoFactorService.validateCode(usuario.getSecretKey(), verifyDTO.getCode());
+            
+            if (isValid) {
+                // Ativar 2FA (mantém secretKey)
+                usuario.setTwoFactorEnabled(true);
+                usuarioRepository.save(usuario);
+
+                
+                return ApiResponse.success(null, "2FA ativado com sucesso");
+            } else {
+                return ApiResponse.badRequest("Código 2FA inválido");
+            }
+        } catch (UsuarioNaoEncontradoException e) {
+            logger.error("Usuário não encontrado: {}", keycloakId);
+            return ApiResponse.notFound(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Erro ao ativar 2FA: ", e);
+            return ApiResponse.error("Erro ao ativar 2FA", 500);
+        }
+    }
+
+    @Transactional
+    public ApiResponse<Void> disableTwoFactor(String keycloakId) {
+        try {
+            Usuario usuario = usuarioRepository.findByKeycloakId(keycloakId)
+                    .orElseThrow(() -> new UsuarioNaoEncontradoException(keycloakId));
+
+            usuario.setTwoFactorEnabled(false);
+            usuario.setSecretKey(null);
+            usuarioRepository.save(usuario);
+            emailService.sendTwoFactorDisabledEmail(usuario.getEmail(), usuario.getNome());
+            return ApiResponse.success(null, "2FA desabilitado com sucesso");
+        } catch (UsuarioNaoEncontradoException e) {
+            logger.error("Usuário não encontrado: {}", keycloakId);
+            return ApiResponse.notFound(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Erro ao desabilitar 2FA: ", e);
+            return ApiResponse.error("Erro ao desabilitar 2FA", 500);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<TwoFactorStatusDTO> getTwoFactorStatus(String keycloakId) {
+        try {
+            Usuario usuario = usuarioRepository.findByKeycloakId(keycloakId)
+                    .orElseThrow(() -> new UsuarioNaoEncontradoException(keycloakId));
+
+            TwoFactorStatusDTO statusDTO = new TwoFactorStatusDTO();
+            statusDTO.setTwoFactorEnabled(usuario.getTwoFactorEnabled());
+            statusDTO.setTwoFactorConfigured(usuario.getSecretKey() != null && !usuario.getTwoFactorEnabled());
+
+            return ApiResponse.success(statusDTO, "Status do 2FA obtido com sucesso");
+        } catch (UsuarioNaoEncontradoException e) {
+            logger.error("Usuário não encontrado: {}", keycloakId);
+            return ApiResponse.notFound(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Erro ao obter status do 2FA: ", e);
+            return ApiResponse.error("Erro ao obter status do 2FA", 500);
+        }
     }
 }

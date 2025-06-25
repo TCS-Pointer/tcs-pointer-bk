@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.dto.AtualizarStatusPDIDTO;
 import br.com.pointer.pointer_back.dto.pdiDTO;
+import br.com.pointer.pointer_back.dto.PdiListagemDTO;
 import br.com.pointer.pointer_back.enums.StatusMarcoPDI;
 import br.com.pointer.pointer_back.enums.StatusPDI;
 import br.com.pointer.pointer_back.exception.PDINaoEncontradoException;
@@ -264,5 +265,9 @@ public class PDIService {
             logger.error("Erro ao listar PDIs com destinatário: ", e);
             return ApiResponse.badRequest("Erro ao listar PDIs com destinatário: " + e.getMessage());
         }
+    }
+
+    public List<PdiListagemDTO> listarParaListagem() {
+        return pdiRepository.buscarTodosParaListagem();
     }
 }

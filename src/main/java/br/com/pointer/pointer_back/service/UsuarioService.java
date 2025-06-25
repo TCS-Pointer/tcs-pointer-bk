@@ -566,8 +566,8 @@ public class UsuarioService {
     }
 
     @Transactional
-    public ApiResponse<List<UsuarioResponePDIDTO>> listarUsuariosFeedback() {
-        List<Usuario> usuarios = usuarioRepository.findAll();
+    public ApiResponse<List<UsuarioResponePDIDTO>> listarUsuariosFeedback(String keycloakId) {
+        List<Usuario> usuarios = usuarioRepository.findByStatusAndKeycloakIdNot(StatusUsuario.ATIVO, keycloakId);
         return ApiResponse.mapList(usuarios, UsuarioResponePDIDTO.class, "Usuários encontrados com sucesso");
     }
 }

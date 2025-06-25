@@ -37,35 +37,27 @@ public class FeedbackService {
     private final ModelMapper modelMapper;
 
     public ApiResponse<Void> criarFeedback(FeedbackDTO feedbackDTO) {
-        long startTime = System.nanoTime(); // Início da medição de tempo
-
         try {
             if (!notasSaoValidas(feedbackDTO)) {
                 return ApiResponse.badRequest("As notas devem estar entre 1 e 5");
             }
 
-            List<Usuario> usuarios = usuarioRepository.findByIdIn(
-                    List.of(feedbackDTO.getIdUsuarioRemetente(), feedbackDTO.getIdUsuarioDestinatario())
-            );
+            Usuario remetente = usuarioRepository.findByKeycloakId(feedbackDTO.getKeycloakIdRemetente())
+                    .orElse(null);
 
-
-            boolean remetenteExiste = usuarios.stream()
-                    .anyMatch(u -> u.getId().equals(feedbackDTO.getIdUsuarioRemetente()));
-            boolean destinatarioExiste = usuarios.stream()
-                    .anyMatch(u -> u.getId().equals(feedbackDTO.getIdUsuarioDestinatario()));
-
-            if (!remetenteExiste) {
-                logger.error("Usuário remetente não encontrado: {}", feedbackDTO.getIdUsuarioRemetente());
+            if (remetente == null) {
+                logger.error("Usuário remetente não encontrado: {}", feedbackDTO.getKeycloakIdRemetente());
                 return ApiResponse.notFound("Usuário remetente não encontrado");
             }
-
-            if (!destinatarioExiste) {
+            if (!usuarioRepository.existsById(feedbackDTO.getIdUsuarioDestinatario())) {
                 logger.error("Usuário destinatário não encontrado: {}", feedbackDTO.getIdUsuarioDestinatario());
                 return ApiResponse.notFound("Usuário destinatário não encontrado");
             }
-
+            feedbackDTO.setIdUsuarioRemetente(remetente.getId());
             Feedback feedback = modelMapper.map(feedbackDTO, Feedback.class);
+
             feedbackRepository.save(feedback);
+
             logger.info("Feedback criado com sucesso (ID {}), tempo total: {} ms", feedback.getIdFeedback());
 
             return ApiResponse.success("Feedback criado com sucesso");
@@ -75,7 +67,6 @@ public class FeedbackService {
             return ApiResponse.internalServerError("Erro ao criar feedback: " + e.getMessage());
         }
     }
-
 
     public ApiResponse<Page<FeedbackResponseDTO>> listarFeedbacksRecebidos(String keycloakId, String keyword,
             int page) {

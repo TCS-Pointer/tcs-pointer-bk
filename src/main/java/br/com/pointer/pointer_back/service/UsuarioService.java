@@ -22,6 +22,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.dto.AlterarStatusDTO;
@@ -34,6 +36,9 @@ import br.com.pointer.pointer_back.dto.UsuarioDTO;
 import br.com.pointer.pointer_back.dto.UsuarioResponePDIDTO;
 import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
 import br.com.pointer.pointer_back.dto.UsuarioUpdateDTO;
+import br.com.pointer.pointer_back.dto.TwoFactorSetupDTO;
+import br.com.pointer.pointer_back.dto.TwoFactorVerifyDTO;
+import br.com.pointer.pointer_back.dto.TwoFactorStatusDTO;
 import br.com.pointer.pointer_back.exception.KeycloakException;
 import br.com.pointer.pointer_back.exception.SetorCargoInvalidoException;
 import br.com.pointer.pointer_back.exception.TokenExpiradoException;
@@ -43,6 +48,8 @@ import br.com.pointer.pointer_back.model.StatusUsuario;
 import br.com.pointer.pointer_back.model.Usuario;
 import br.com.pointer.pointer_back.repository.UsuarioRepository;
 import br.com.pointer.pointer_back.util.ValidationUtil;
+import br.com.pointer.pointer_back.service.TwoFactorService;
+import br.com.pointer.pointer_back.util.UserUtil;
 
 @Service
 public class UsuarioService {
@@ -57,6 +64,7 @@ public class UsuarioService {
     private final String realm;
     private final SetorCargoService setorCargoService;
     private final PrimeiroAcessoService primeiroAcessoService;
+    private final TwoFactorService twoFactorService;
 
     public UsuarioService(
             UsuarioRepository usuarioRepository,
@@ -66,6 +74,7 @@ public class UsuarioService {
             Keycloak keycloak,
             SetorCargoService setorCargoService,
             PrimeiroAcessoService primeiroAcessoService,
+            TwoFactorService twoFactorService,
             @Value("${keycloak.realm}") String realm) {
         this.usuarioRepository = usuarioRepository;
         this.keycloakAdminService = keycloakAdminService;
@@ -74,6 +83,7 @@ public class UsuarioService {
         this.keycloak = keycloak;
         this.setorCargoService = setorCargoService;
         this.primeiroAcessoService = primeiroAcessoService;
+        this.twoFactorService = twoFactorService;
         this.realm = realm;
     }
 

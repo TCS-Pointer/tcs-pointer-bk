@@ -4,6 +4,7 @@ import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.dto.pdiDTO;
 import br.com.pointer.pointer_back.dto.AtualizarStatusPDIDTO;
 import br.com.pointer.pointer_back.service.PDIService;
+import br.com.pointer.pointer_back.dto.PdiListagemDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
@@ -73,5 +74,11 @@ public class PDIController {
     @PreAuthorize("hasRole('admin')")
     public ApiResponse<List<pdiDTO>> listarTodos() {
         return pdiService.listarTodos();
+    }
+
+    @GetMapping("/listagem-simples")
+    @PreAuthorize("hasRole('admin')")
+    public List<PdiListagemDTO> listarSimples() {
+        return pdiService.listarParaListagem();
     }
 }

@@ -23,7 +23,6 @@ public class PDIController {
     private PDIService pdiService;
 
     @GetMapping("/destinatario/{idDestinatario}")
-    @PreAuthorize("hasRole('usuario')")
     public ApiResponse<List<pdiDTO>> buscarPorDestinatario(@PathVariable Long idDestinatario) {
         return pdiService.buscarPorDestinatario(idDestinatario);
     }
@@ -41,7 +40,6 @@ public class PDIController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('admin') or hasRole('gestor')")
     public ApiResponse<pdiDTO> buscarPorId(@PathVariable Long id) {
         return pdiService.buscarPorId(id);
     }
@@ -65,7 +63,7 @@ public class PDIController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('usuario') or hasRole('admin') or hasRole('gestor')")
+    @PreAuthorize("hasRole('colaborador') or hasRole('admin') or hasRole('gestor')")
     public ApiResponse<pdiDTO> atualizarStatus(@PathVariable Long id, @RequestBody AtualizarStatusPDIDTO dto) {
         return pdiService.atualizarStatus(id, dto);
     }
@@ -77,7 +75,6 @@ public class PDIController {
     }
 
     @GetMapping("/listagem-simples")
-    @PreAuthorize("hasRole('admin')")
     public List<PdiListagemDTO> listarSimples() {
         return pdiService.listarParaListagem();
     }

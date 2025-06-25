@@ -125,8 +125,8 @@ public class UsuarioController {
         return usuarioService.buscarUsuariosPorSetor(keycloakId);
     }
 
-    @GetMapping("/listar-usuarios-feedback")
-    public ApiResponse<List<UsuarioResponePDIDTO>> listarUsuariosFeedback() {
-        return usuarioService.listarUsuariosFeedback();
+    @PostMapping("/listar-usuarios-feedback")
+    public ApiResponse<List<UsuarioResponePDIDTO>> listarUsuariosFeedback(@RequestBody String keycloakId) {
+        return usuarioService.listarUsuariosFeedback(keycloakId);
     }
 }

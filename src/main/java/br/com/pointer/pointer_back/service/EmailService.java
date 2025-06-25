@@ -56,6 +56,16 @@ public class EmailService {
         logger.info("Email de primeiro acesso enviado com sucesso para: {}", recipientEmail);
     }
 
+
+    public void sendTwoFactorDisabledEmail(String recipientEmail, String name) {
+        logger.info("Iniciando envio de email com 2FA desabilitado para: {}", recipientEmail);
+        String templateId = "d-";
+        String subject = "Pointer";
+        Map<String, String> dynamicData = Map.of("nome", name);
+        Mail mail = createTemplateMail(recipientEmail, templateId, subject, dynamicData);
+        sendMail(mail);
+        logger.info("Email com 2FA desabilitado enviado com sucesso para: {}", recipientEmail);
+    }
     public void sendVerificationCodeEmail(String recipientEmail, String name) {
         logger.info("Iniciando envio de email com código de verificação para: {}", recipientEmail);
         String templateId = "d-8b3d5327466b48239ddc170d54af8bce";
@@ -65,6 +75,7 @@ public class EmailService {
         Mail mail = createTemplateMail(recipientEmail, templateId, subject, dynamicData);
         verificationCodes.put(recipientEmail, code);
         sendMail(mail);
+        logger.info(sendGridApiKey);
         logger.info("Email com código de verificação enviado com sucesso para: {}", recipientEmail);
     }
 
@@ -78,6 +89,7 @@ public class EmailService {
         verificationCodes.remove(email);
         logger.info("Código de verificação removido para: {}", email);
     }
+
 
     private Mail createTemplateMail(String recipientEmail, String templateId, String subject, Map<String, String> dynamicData) {
         logger.debug("Criando email com template {} para: {}", templateId, recipientEmail);

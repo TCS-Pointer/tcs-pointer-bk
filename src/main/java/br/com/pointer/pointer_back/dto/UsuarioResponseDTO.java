@@ -19,4 +19,5 @@ public class UsuarioResponseDTO {
     private LocalDateTime dataCriacao;
     private StatusUsuario Status;
     private String keycloakId;
+    private Boolean twoFactorEnabled;
 }

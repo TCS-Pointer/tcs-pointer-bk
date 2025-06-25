@@ -28,6 +28,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>, JpaSpec
     @Query("SELECT u FROM Usuario u WHERE u.setor = :setor AND u.keycloakId != :keycloakId")
     List<Usuario> findBySetor(String setor, String keycloakId);
 
+    @Query("SELECT u FROM Usuario u WHERE u.setor = :setor AND u.status = :status")
+    List<Usuario> findBySetorAndStatus(String setor, StatusUsuario status);
+
     @Query("SELECT u FROM Usuario u WHERE " +
            "(:tipoUsuario IS NULL OR u.tipoUsuario = :tipoUsuario) AND " +
            "(:setor IS NULL OR u.setor = :setor) AND " +

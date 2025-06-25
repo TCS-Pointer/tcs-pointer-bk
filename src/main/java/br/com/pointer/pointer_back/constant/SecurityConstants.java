@@ -12,7 +12,8 @@ public final class SecurityConstants {
         "/api/usuarios/redefinir-senha", 
         "/api/usuarios/esqueceu-senha",
         "/api/usuarios/primeiro-acesso",
-        "/api/usuarios/primeiro-acesso/reenviar"
+        "/api/usuarios/primeiro-acesso/reenviar",
+        "/api/2fa/verify"
     );
     
     // URLs excluídas do interceptor
@@ -24,6 +25,7 @@ public final class SecurityConstants {
         "/api/usuarios/redefinir-senha",
         "/api/usuarios/esqueceu-senha",
         "/api/usuarios/verificar-codigo",
+        "/api/2fa/verify",
         "/error"
     );
     

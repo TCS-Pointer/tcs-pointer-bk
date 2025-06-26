@@ -3,6 +3,7 @@ package br.com.pointer.pointer_back.model;
 import br.com.pointer.pointer_back.enums.StatusMarcoPDI;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 import java.time.LocalDate;
 
 @Data
@@ -27,6 +28,7 @@ public class MarcoPDI {
     @Column(name = "dt_final", nullable = false)
     private LocalDate dtFinal;
 
+    @ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "pdi_id", nullable = false)
     private PDI pdi;

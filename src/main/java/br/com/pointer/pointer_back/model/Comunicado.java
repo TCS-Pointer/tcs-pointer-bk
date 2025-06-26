@@ -27,7 +27,7 @@ public class Comunicado {
     @Column(nullable = false)
     private String titulo;
 
-    @Column(nullable = false, length = 400)
+    @Column(nullable = false, length = 1200)
     private String descricao;
 
     @ElementCollection

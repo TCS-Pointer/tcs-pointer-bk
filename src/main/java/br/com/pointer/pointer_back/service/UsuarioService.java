@@ -431,6 +431,7 @@ public class UsuarioService {
             Usuario usuario = usuarioRepository.findByEmail(updatePasswordDTO.getEmail())
                     .orElseThrow(() -> new UsuarioNaoEncontradoException(updatePasswordDTO.getEmail()));
 
+            ValidationUtil.validarSenhaComplexa(updatePasswordDTO.getSenha());
             KeycloakResponseDTO keycloakResponse = keycloakAdminService.updatePassword(
                     usuario.getKeycloakId(), updatePasswordDTO.getSenha());
 

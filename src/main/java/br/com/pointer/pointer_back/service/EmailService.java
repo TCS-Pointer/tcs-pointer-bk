@@ -59,7 +59,7 @@ public class EmailService {
 
     public void sendTwoFactorDisabledEmail(String recipientEmail, String name) {
         logger.info("Iniciando envio de email com 2FA desabilitado para: {}", recipientEmail);
-        String templateId = "d-";
+        String templateId = "d-0cb0b3546b0d4e308eaff6cb1688df83";
         String subject = "Pointer";
         Map<String, String> dynamicData = Map.of("nome", name);
         Mail mail = createTemplateMail(recipientEmail, templateId, subject, dynamicData);

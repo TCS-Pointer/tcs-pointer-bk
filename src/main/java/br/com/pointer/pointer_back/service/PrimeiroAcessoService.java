@@ -35,6 +35,10 @@ public class PrimeiroAcessoService {
     }
 
     public String validarToken(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new TokenInvalidoException("Token inválido");
+        }
+        
         TokenInfo tokenInfo = obterTokenInfo(token);
         validarExpiracao(tokenInfo);
 
@@ -42,7 +46,9 @@ public class PrimeiroAcessoService {
     }
 
     public void removerToken(String token) {
-        tokens.remove(token);
+        if (token != null) {
+            tokens.remove(token);
+        }
     }
 
     private TokenInfo obterTokenInfo(String token) {

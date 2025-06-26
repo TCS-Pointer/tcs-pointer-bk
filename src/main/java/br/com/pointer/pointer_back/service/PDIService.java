@@ -29,18 +29,15 @@ public class PDIService {
 
     private static final Logger logger = LoggerFactory.getLogger(PDIService.class);
 
-    @Autowired
-    private PDIRepository pdiRepository;
-
-    @Autowired
+    private final PDIRepository pdiRepository;
     private final ModelMapper modelMapper;
+    private final UsuarioRepository usuarioRepository;
 
     @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    public PDIService(PDIRepository pdiRepository, ModelMapper modelMapper) {
+    public PDIService(PDIRepository pdiRepository, ModelMapper modelMapper, UsuarioRepository usuarioRepository) {
         this.pdiRepository = pdiRepository;
         this.modelMapper = modelMapper;
+        this.usuarioRepository = usuarioRepository;
     }
 
     @Transactional(readOnly = true)

@@ -24,13 +24,13 @@ public class MarcoPDIController {
     }
 
     @GetMapping("/pdi/{pdiId}")
-    @PreAuthorize("hasRole('usuario') or hasRole('admin') or hasRole('gestor')")
+    @PreAuthorize("hasRole('colaborador') or hasRole('admin') or hasRole('gestor')")
     public ApiResponse<List<MarcoPDIDTO>> listarPorPDI(@PathVariable Long pdiId) {
         return marcoPDIService.listarPorPDI(pdiId);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('usuario') or hasRole('admin') or hasRole('gestor')")
+    @PreAuthorize("hasRole('colaborador') or hasRole('admin') or hasRole('gestor')")
     public ApiResponse<MarcoPDIDTO> buscarPorId(@PathVariable Long id) {
         return marcoPDIService.buscarPorId(id);
     }

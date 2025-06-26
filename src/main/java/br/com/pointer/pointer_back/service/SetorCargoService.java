@@ -56,11 +56,17 @@ public class SetorCargoService {
     }
 
     public boolean isSetorValido(String setor) {
+        if (dados == null || dados.getSetores() == null || setor == null) {
+            return false;
+        }
         return dados.getSetores().stream()
                 .anyMatch(s -> s.getSetor().equals(setor));
     }
 
     public boolean isCargoValido(String setor, String cargo) {
+        if (dados == null || dados.getSetores() == null || setor == null || cargo == null) {
+            return false;
+        }
         return dados.getSetores().stream()
                 .filter(s -> s.getSetor().equals(setor))
                 .findFirst()
@@ -69,12 +75,18 @@ public class SetorCargoService {
     }
 
     public List<String> getSetores() {
+        if (dados == null || dados.getSetores() == null) {
+            return List.of();
+        }
         return dados.getSetores().stream()
                 .map(SetorCargoDTO.Setor::getSetor)
                 .collect(Collectors.toList());
     }
 
     public List<String> getCargosPorSetor(String setor) {
+        if (dados == null || dados.getSetores() == null || setor == null) {
+            return List.of();
+        }
         return dados.getSetores().stream()
                 .filter(s -> s.getSetor().equals(setor))
                 .findFirst()

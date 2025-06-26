@@ -18,6 +18,12 @@ public class TwoFactorService {
         this.secureRandom = new SecureRandom();
     }
 
+    // Construtor para testes
+    public TwoFactorService(GoogleAuthenticator gAuth) {
+        this.gAuth = gAuth;
+        this.secureRandom = new SecureRandom();
+    }
+
     /**
      * Gera uma nova chave secreta para 2FA
      */

@@ -31,6 +31,9 @@ public class EmailService {
     private final Map<String, String> verificationCodes = new ConcurrentHashMap<>();
 
     public void sendPasswordEmail(String recipientEmail, String password, String name) {
+        if (recipientEmail == null || recipientEmail.trim().isEmpty()) {
+            throw new NullPointerException("Email não pode ser nulo ou vazio");
+        }
         logger.info("Iniciando envio de email com senha para: {}", recipientEmail);
         String templateId = "d-d833e5b4a1e84774b566a29a2bd2e984";
         String subject = "Sua senha de acesso - Pointer";
@@ -42,6 +45,9 @@ public class EmailService {
     }
 
     public void sendPrimeiroAcessoEmail(String recipientEmail, String name, String token) {
+        if (recipientEmail == null || recipientEmail.trim().isEmpty()) {
+            throw new NullPointerException("Email não pode ser nulo ou vazio");
+        }
         logger.info("Iniciando envio de email de primeiro acesso para: {}", recipientEmail);
         String templateId = "d-d09158bb610d47f58c3a85e11bdee6ad";
         String subject = "Pointer";
@@ -58,6 +64,9 @@ public class EmailService {
 
 
     public void sendTwoFactorDisabledEmail(String recipientEmail, String name) {
+        if (recipientEmail == null || recipientEmail.trim().isEmpty()) {
+            throw new NullPointerException("Email não pode ser nulo ou vazio");
+        }
         logger.info("Iniciando envio de email com 2FA desabilitado para: {}", recipientEmail);
         String templateId = "d-0cb0b3546b0d4e308eaff6cb1688df83";
         String subject = "Pointer";
@@ -80,14 +89,19 @@ public class EmailService {
     }
 
     public boolean verifyCode(String email, String code) {
+        if (email == null || code == null) {
+            return false;
+        }
         boolean isValid = code.equals(verificationCodes.get(email));
         logger.info("Verificação de código para {}: {}", email, isValid ? "válido" : "inválido");
         return isValid;
     }
 
     public void removeVerificationCode(String email) {
-        verificationCodes.remove(email);
-        logger.info("Código de verificação removido para: {}", email);
+        if (email != null) {
+            verificationCodes.remove(email);
+            logger.info("Código de verificação removido para: {}", email);
+        }
     }
 
 

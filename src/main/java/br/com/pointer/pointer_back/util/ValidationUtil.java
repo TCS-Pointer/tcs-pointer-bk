@@ -1,10 +1,10 @@
 package br.com.pointer.pointer_back.util;
 
-import br.com.pointer.pointer_back.exception.KeycloakException;
-import br.com.pointer.pointer_back.exception.EmailInvalidoException;
-import br.com.pointer.pointer_back.exception.SenhaInvalidaException;
-
 import java.util.Set;
+
+import br.com.pointer.pointer_back.exception.EmailInvalidoException;
+import br.com.pointer.pointer_back.exception.KeycloakException;
+import br.com.pointer.pointer_back.exception.SenhaInvalidaException;
 
 public class ValidationUtil {
     
@@ -68,5 +68,24 @@ public class ValidationUtil {
         if (roles == null || roles.isEmpty()) {
             throw new KeycloakException("Ao menos uma role deve ser especificada", 400, "INVALID_ROLES");
         }
+    }
+    
+    public static void validarSenhaComplexa(String senha) {
+        if (senha == null || senha.length() < 8) {
+            throw new SenhaInvalidaException("Senha deve ter pelo menos 8 caracteres");
+        }
+
+        if (!senha.matches(".*[A-Z].*")) {
+            throw new SenhaInvalidaException("Senha deve ter pelo menos uma letra maiúscula");
+        }
+
+        if (!senha.matches(".*[0-9].*")) {
+            throw new SenhaInvalidaException("Senha deve ter pelo menos um número");
+        }
+
+        if (!senha.matches(".*[!@#$%^&*()].*")) {
+            throw new SenhaInvalidaException("Senha deve ter pelo menos um caractere especial");
+        }
+        
     }
 } 

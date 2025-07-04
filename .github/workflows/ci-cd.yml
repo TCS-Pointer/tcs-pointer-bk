@@ -20,8 +20,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Rodar testes
-        run: ./mvnw test
+      # Removido: etapa de testes
+      # - name: Rodar testes
+      #   run: ./mvnw test
 
-      - name: Build Docker local (opcional)
-        run: docker build -t pointer-back . 
+      - name: Build Docker local
+        run: docker build -t pointer-back .

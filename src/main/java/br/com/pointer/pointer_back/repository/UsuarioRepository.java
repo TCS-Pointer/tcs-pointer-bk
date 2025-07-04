@@ -20,18 +20,28 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>, JpaSpec
     Optional<Usuario> findByKeycloakId(String keycloakId);
     Optional<Usuario> findByEmail(String email);
     boolean existsByEmail(String email);
+    List<Usuario> findByIdIn(List<Long> ids);
+
+    @Query("SELECT u FROM Usuario u WHERE u.status = :status AND u.keycloakId != :keycloakId")
+    List<Usuario> findByStatusAndKeycloakIdNot(StatusUsuario status, String keycloakId);
 
     @Query("SELECT u FROM Usuario u WHERE u.setor = :setor AND u.keycloakId != :keycloakId")
     List<Usuario> findBySetor(String setor, String keycloakId);
 
+    @Query("SELECT u FROM Usuario u WHERE u.setor = :setor AND u.status = :status")
+    List<Usuario> findBySetorAndStatus(String setor, StatusUsuario status);
+
     @Query("SELECT u FROM Usuario u WHERE " +
            "(:tipoUsuario IS NULL OR u.tipoUsuario = :tipoUsuario) AND " +
            "(:setor IS NULL OR u.setor = :setor) AND " +
-           "(:status IS NULL OR u.status = :status)")
+           "(:status IS NULL OR u.status = :status) " +
+           "AND (:nome IS NULL OR :nome = '' OR LOWER(u.nome) LIKE LOWER(CONCAT('%', :nome, '%'))) " +
+           "ORDER BY u.dataCriacao DESC")
     Page<Usuario> findByFilters(
         @Param("tipoUsuario") String tipoUsuario,
         @Param("setor") String setor,
         @Param("status") StatusUsuario status,
+        @Param("nome") String nome,
         Pageable pageable
     );
 

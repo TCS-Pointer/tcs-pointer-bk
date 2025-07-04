@@ -22,6 +22,7 @@ import br.com.pointer.pointer_back.dto.PrimeiroAcessoDTO;
 import br.com.pointer.pointer_back.dto.TipoUsuarioStatsResponseDTO;
 import br.com.pointer.pointer_back.dto.UpdatePasswordDTO;
 import br.com.pointer.pointer_back.dto.UsuarioDTO;
+import br.com.pointer.pointer_back.dto.UsuarioResponePDIDTO;
 import br.com.pointer.pointer_back.dto.UsuarioResponseDTO;
 import br.com.pointer.pointer_back.dto.UsuarioUpdateDTO;
 import br.com.pointer.pointer_back.service.UsuarioService;
@@ -57,9 +58,10 @@ public class UsuarioController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String tipoUsuario,
             @RequestParam(required = false) String setor,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String nome) {
         return usuarioService.listarUsuarios(
-                PageRequest.of(page, size), tipoUsuario, setor, status);
+                PageRequest.of(page, size), tipoUsuario, setor, status, nome);
     }
 
     @PutMapping("/alterar-status")
@@ -121,5 +123,10 @@ public class UsuarioController {
     @GetMapping("/setor/{keycloakId}")
     public ApiResponse<List<UsuarioResponseDTO>> buscarUsuariosPorSetor(@PathVariable String keycloakId) {
         return usuarioService.buscarUsuariosPorSetor(keycloakId);
+    }
+
+    @PostMapping("/listar-usuarios-feedback")
+    public ApiResponse<List<UsuarioResponePDIDTO>> listarUsuariosFeedback(@RequestBody String keycloakId) {
+        return usuarioService.listarUsuariosFeedback(keycloakId);
     }
 }

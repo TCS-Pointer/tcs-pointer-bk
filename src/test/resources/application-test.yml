@@ -1,0 +1,50 @@
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    username: sa
+    password: 
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: false
+  flyway:
+    enabled: false
+  liquibase:
+    enabled: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/pointer
+          jwk-set-uri: http://localhost:8080/realms/pointer/protocol/openid-connect/certs
+
+# Configurações do Keycloak Admin Client para testes
+keycloak:
+  auth-server-url: http://localhost:8080/
+  realm: pointer
+  client-id: pointer
+  client-secret: test-secret
+  admin:
+    username: admin
+    password: admin
+
+# Configurações do SendGrid para testes
+sendgrid:
+  api:
+    key: test-key
+
+# Configurações de logging para testes
+logging:
+  level:
+    org.springframework: WARN
+    org.hibernate: WARN
+    br.com.pointer: DEBUG 

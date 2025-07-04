@@ -1,5 +1,7 @@
 package br.com.pointer.pointer_back.dto;
 
+import br.com.pointer.pointer_back.enums.TipoFeedback;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -14,11 +16,11 @@ public class FeedbackResponseDTO {
     private Integer avProdutividade;
     private Integer resolucaoDeProblemas;
     private Integer trabalhoEmEquipe;
+    @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
     private LocalDateTime dtEnvio;
-    private String destinatario;
     private String pontosFortes;
     private String pontosMelhoria;
-    private String tipoFeedback;
-    private Long idUsuarioDestinatario;
-    private Long idUsuarioRemetente;
+    private TipoFeedback tipoFeedback;
+    private DestinatarioDTO destinatarioDTO;
+    private RemetenteDTO remetenteDTO;
 } 

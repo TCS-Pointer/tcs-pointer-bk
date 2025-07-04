@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.dto.AtualizarStatusPDIDTO;
 import br.com.pointer.pointer_back.dto.pdiDTO;
+import br.com.pointer.pointer_back.dto.PdiListagemDTO;
 import br.com.pointer.pointer_back.enums.StatusMarcoPDI;
 import br.com.pointer.pointer_back.enums.StatusPDI;
 import br.com.pointer.pointer_back.exception.PDINaoEncontradoException;
@@ -28,18 +29,15 @@ public class PDIService {
 
     private static final Logger logger = LoggerFactory.getLogger(PDIService.class);
 
-    @Autowired
-    private PDIRepository pdiRepository;
-
-    @Autowired
+    private final PDIRepository pdiRepository;
     private final ModelMapper modelMapper;
+    private final UsuarioRepository usuarioRepository;
 
     @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    public PDIService(PDIRepository pdiRepository, ModelMapper modelMapper) {
+    public PDIService(PDIRepository pdiRepository, ModelMapper modelMapper, UsuarioRepository usuarioRepository) {
         this.pdiRepository = pdiRepository;
         this.modelMapper = modelMapper;
+        this.usuarioRepository = usuarioRepository;
     }
 
     @Transactional(readOnly = true)
@@ -264,5 +262,9 @@ public class PDIService {
             logger.error("Erro ao listar PDIs com destinatário: ", e);
             return ApiResponse.badRequest("Erro ao listar PDIs com destinatário: " + e.getMessage());
         }
+    }
+
+    public List<PdiListagemDTO> listarParaListagem() {
+        return pdiRepository.buscarTodosParaListagem();
     }
 }

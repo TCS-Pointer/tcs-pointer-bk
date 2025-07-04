@@ -3,6 +3,7 @@ package br.com.pointer.pointer_back.model;
 import br.com.pointer.pointer_back.enums.StatusPDI;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,6 +23,7 @@ public class PDI {
     @Column(nullable = false)
     private String descricao;
 
+    @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_destinatario", nullable = false)
     private Usuario destinatario;
@@ -39,6 +41,7 @@ public class PDI {
     @Column(name = "id_usuario", nullable = false)
     private Long idUsuario;
 
+    @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario", insertable = false, updatable = false)
     private Usuario usuario;
@@ -46,6 +49,7 @@ public class PDI {
     @Column(name = "dt_criacao", nullable = false)
     private LocalDateTime dataCriacao;
 
+    @ToString.Exclude
     @OneToMany(mappedBy = "pdi", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<MarcoPDI> marcos;
 

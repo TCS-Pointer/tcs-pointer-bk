@@ -18,6 +18,10 @@ import org.springframework.web.client.RestTemplate;
 
 import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.exception.KeycloakException;
+import br.com.pointer.pointer_back.repository.UsuarioRepository;
+import br.com.pointer.pointer_back.model.Usuario;
+
+import java.util.Optional;
 
 @RequestMapping("/token")
 @RestController
@@ -36,6 +40,11 @@ public class TokenController {
     @Value("${keycloak.client-id:pointer}")
     private String clientId;
 
+    private final UsuarioRepository usuarioRepository;
+
+    public TokenController(UsuarioRepository usuarioRepository) {
+        this.usuarioRepository = usuarioRepository;
+    }
 
     @PostMapping
     public ApiResponse<TokenResponse> token(@RequestBody LoginRequest loginRequest) {
@@ -57,6 +66,19 @@ public class TokenController {
             String tokenUrl = String.format("%s/realms/%s/protocol/openid-connect/token", authServerUrl, realm);
 
             ResponseEntity<TokenResponse> response = restTemplate.postForEntity(tokenUrl, entity, TokenResponse.class);
+            
+            // Buscar informações de 2FA do usuário
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(loginRequest.username());
+            if (usuarioOpt.isPresent()) {
+                Usuario usuario = usuarioOpt.get();
+                response.getBody().setTwo_factor_enabled(usuario.getTwoFactorEnabled());
+                response.getBody().setTwo_factor_configured(usuario.getSecretKey() != null);
+            } else {
+                // Usuário não encontrado no banco, definir como false
+                response.getBody().setTwo_factor_enabled(false);
+                response.getBody().setTwo_factor_configured(false);
+            }
+            
             logger.info("Login do username: {}", loginRequest.username());
             return new ApiResponse<TokenResponse>().ok(response.getBody(), "Token gerado com sucesso");
         } catch (HttpClientErrorException e) {

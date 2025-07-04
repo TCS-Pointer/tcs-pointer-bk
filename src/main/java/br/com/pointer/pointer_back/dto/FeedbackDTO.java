@@ -1,5 +1,8 @@
 package br.com.pointer.pointer_back.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import br.com.pointer.pointer_back.enums.TipoFeedback;
 import lombok.Data;
 
 @Data
@@ -12,10 +15,11 @@ public class FeedbackDTO {
     private Integer avProdutividade;
     private Integer resolucaoDeProblemas;
     private Integer trabalhoEmEquipe;
-    private String destinatario;
     private String pontosFortes;
     private String pontosMelhoria;
-    private String tipoFeedback;
+    private TipoFeedback tipoFeedback;
     private Long idUsuarioDestinatario;
+    @JsonIgnore
     private Long idUsuarioRemetente;
+    private String keycloakIdRemetente;
 } 

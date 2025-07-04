@@ -60,7 +60,14 @@ public class KeycloakExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleWebApplicationException(WebApplicationException ex) {
         logger.error("Erro na aplicação web: {}", ex.getMessage(), ex);
         Response response = ex.getResponse();
-        String errorMessage = response.readEntity(String.class);
+        
+        String errorMessage;
+        try {
+            errorMessage = response.readEntity(String.class);
+        } catch (Exception e) {
+            logger.warn("Não foi possível ler a entidade da resposta: {}", e.getMessage());
+            errorMessage = "Erro ao processar resposta do Keycloak";
+        }
 
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("message", "Erro na operação do Keycloak");
@@ -77,6 +84,20 @@ public class KeycloakExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseBody
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+        if (ex == null) {
+            logger.error("Exceção nula recebida no handler");
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Erro interno do servidor");
+            response.put("error", "INTERNAL_SERVER_ERROR");
+            response.put("details", "Exceção nula");
+            response.put("timestamp", LocalDateTime.now());
+            response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(response);
+        }
+
         logger.error("Erro não tratado: {}", ex.getMessage(), ex);
 
         Map<String, Object> response = new HashMap<>();

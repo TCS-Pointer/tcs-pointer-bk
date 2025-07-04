@@ -38,6 +38,11 @@ public class FeedbackService {
 
     public ApiResponse<Void> criarFeedback(FeedbackDTO feedbackDTO) {
         try {
+
+            if (feedbackDTO.getIdUsuarioRemetente().equals(feedbackDTO.getIdUsuarioDestinatario())) {
+                return ApiResponse.badRequest("O remetente não pode ser o mesmo que o destinatário, favor selecionar outro usuário");
+            }
+
             if (!notasSaoValidas(feedbackDTO)) {
                 return ApiResponse.badRequest("As notas devem estar entre 1 e 5");
             }

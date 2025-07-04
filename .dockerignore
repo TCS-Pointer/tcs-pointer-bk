@@ -1,0 +1,44 @@
+# Arquivos do Git
+.git
+.gitignore
+
+# Arquivos do Maven
+target/
+!target/*.jar
+
+# Arquivos de IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Arquivos temporários
+*.tmp
+*.temp
+
+# Arquivos de teste
+src/test/
+
+# Documentação
+README.md
+docs/
+
+# Arquivos de configuração local
+.env
+.env.local
+.env.development
+.env.test
+
+# Arquivos de backup
+*.bak
+*.backup 

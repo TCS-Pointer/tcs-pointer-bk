@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: pointer-back
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI}
+
+
+server:
+  port: ${SERVER_PORT}
+
+# Configurações do Keycloak Admin Client
+keycloak:
+  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL}
+  realm: ${KEYCLOAK_REALM}
+  client-id: ${KEYCLOAK_CLIENT_ID}
+  client-secret: ${KEYCLOAK_CLIENT_SECRET}
+
+  # Configurações do usuário admin do Keycloak
+  admin:
+    username: ${KEYCLOAK_ADMIN_USERNAME}
+    password: ${KEYCLOAK_ADMIN_PASSWORD}
+
+# Configurações do SendGrid
+sendgrid:
+  api:
+    key: ${SENDGRID_API_KEY}
+
+
+app:
+  frontend:
+    url: ${FRONTEND_URL}

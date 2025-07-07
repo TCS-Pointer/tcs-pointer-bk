@@ -61,8 +61,8 @@ public class ComunicadoService {
                     break;
                     
                 case "GESTOR":
-                    // GESTOR: Setor do usuário + apenasGestores = true
-                    comunicados = comunicadoRepository.findByFilters(usuario.getSetor(), titulo, true, pageRequest);
+                    // GESTOR: Setor do usuário + apenasGestores = null (retorna true e false)
+                    comunicados = comunicadoRepository.findByFilters(usuario.getSetor(), titulo, null, pageRequest);
                     break;
                     
                 default:

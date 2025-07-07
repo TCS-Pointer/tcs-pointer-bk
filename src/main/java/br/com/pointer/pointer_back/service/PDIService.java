@@ -15,6 +15,7 @@ import br.com.pointer.pointer_back.ApiResponse;
 import br.com.pointer.pointer_back.dto.AtualizarStatusPDIDTO;
 import br.com.pointer.pointer_back.dto.pdiDTO;
 import br.com.pointer.pointer_back.dto.PdiListagemDTO;
+import br.com.pointer.pointer_back.dto.MarcoPDIDTO;
 import br.com.pointer.pointer_back.enums.StatusMarcoPDI;
 import br.com.pointer.pointer_back.enums.StatusPDI;
 import br.com.pointer.pointer_back.exception.PDINaoEncontradoException;
@@ -32,12 +33,14 @@ public class PDIService {
     private final PDIRepository pdiRepository;
     private final ModelMapper modelMapper;
     private final UsuarioRepository usuarioRepository;
+    private final ModerationService moderationService;
 
     @Autowired
-    public PDIService(PDIRepository pdiRepository, ModelMapper modelMapper, UsuarioRepository usuarioRepository) {
+    public PDIService(PDIRepository pdiRepository, ModelMapper modelMapper, UsuarioRepository usuarioRepository, ModerationService moderationService) {
         this.pdiRepository = pdiRepository;
         this.modelMapper = modelMapper;
         this.usuarioRepository = usuarioRepository;
+        this.moderationService = moderationService;
     }
 
     @Transactional(readOnly = true)
@@ -100,6 +103,25 @@ public class PDIService {
     public ApiResponse<pdiDTO> criar(pdiDTO dto) {
         try {
             logger.info("Iniciando criação de PDI com dados: {}", dto);
+
+            // Moderar conteúdo do PDI
+            String textoParaModerar = "";
+            if (dto.getTitulo() != null) textoParaModerar += dto.getTitulo() + " ";
+            if (dto.getDescricao() != null) textoParaModerar += dto.getDescricao() + " ";
+            
+            // Moderar conteúdo dos marcos se existirem
+            if (dto.getMarcos() != null) {
+                for (MarcoPDIDTO marco : dto.getMarcos()) {
+                    if (marco.getTitulo() != null) textoParaModerar += marco.getTitulo() + " ";
+                    if (marco.getDescricao() != null) textoParaModerar += marco.getDescricao() + " ";
+                }
+            }
+            
+            if (!textoParaModerar.trim().isEmpty()) {
+                if (!moderationService.isTextoAprovado(textoParaModerar)) {
+                    return ApiResponse.badRequest("O conteúdo do PDI contém linguagem inadequada ou ofensiva. Por favor, revise o texto.");
+                }
+            }
 
             validarDatasPDI(dto);
 

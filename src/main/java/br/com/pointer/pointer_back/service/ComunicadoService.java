@@ -36,6 +36,9 @@ public class ComunicadoService {
     @Autowired
     private ComunicadoLeituraRepository comunicadoLeituraRepository;
 
+    @Autowired
+    private ModerationService moderationService;
+
     @Transactional(readOnly = true)
     public ApiResponse<Page<ComunicadoResponseDTO>> listarTodos(
             String keycloakId,
@@ -99,6 +102,12 @@ public class ComunicadoService {
     @Transactional
     public ApiResponse<ComunicadoDTO> criar(ComunicadoDTO comunicadoDTO) {
         try {
+            // Moderar conteúdo do comunicado
+            String textoParaModerar = comunicadoDTO.getTitulo() + " " + comunicadoDTO.getDescricao();
+            if (!moderationService.isTextoAprovado(textoParaModerar)) {
+                return ApiResponse.badRequest("O conteúdo do comunicado contém linguagem inadequada ou ofensiva. Por favor, revise o texto.");
+            }
+            
             Comunicado comunicado = modelMapper.map(comunicadoDTO, Comunicado.class);
             comunicado.setAtivo(true);
             comunicado = comunicadoRepository.save(comunicado);

@@ -42,3 +42,9 @@ sendgrid:
 app:
   frontend:
     url: ${FRONTEND_URL}
+
+# Configurações do Gemini API para moderação de conteúdo
+gemini:
+  api:
+    url: ${GEMINI_API_URL}
+    key: ${GEMINI_API_KEY}

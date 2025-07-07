@@ -34,7 +34,9 @@ public final class SecurityConstants {
         "http://localhost:3000",
         "http://localhost:8080", 
         "http://127.0.0.1:3000",
-        "http://127.0.0.1:8080"
+        "http://127.0.0.1:8080",
+        "http://localhost:80",
+        "http://localhost"
     );
     
     public static final List<String> ALLOWED_METHODS = Arrays.asList(

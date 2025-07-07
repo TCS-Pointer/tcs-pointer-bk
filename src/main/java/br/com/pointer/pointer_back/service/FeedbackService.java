@@ -35,6 +35,7 @@ public class FeedbackService {
     private final FeedbackRepository feedbackRepository;
     private final UsuarioRepository usuarioRepository;
     private final ModelMapper modelMapper;
+    private final ModerationService moderationService;
 
     public ApiResponse<Void> criarFeedback(FeedbackDTO feedbackDTO) {
         try {
@@ -45,6 +46,19 @@ public class FeedbackService {
 
             if (!notasSaoValidas(feedbackDTO)) {
                 return ApiResponse.badRequest("As notas devem estar entre 1 e 5");
+            }
+
+            // Moderar conteúdo do feedback
+            String textoParaModerar = "";
+            if (feedbackDTO.getAssunto() != null) textoParaModerar += feedbackDTO.getAssunto() + " ";
+            if (feedbackDTO.getPontosFortes() != null) textoParaModerar += feedbackDTO.getPontosFortes() + " ";
+            if (feedbackDTO.getPontosMelhoria() != null) textoParaModerar += feedbackDTO.getPontosMelhoria() + " ";
+            if (feedbackDTO.getAcoesRecomendadas() != null) textoParaModerar += feedbackDTO.getAcoesRecomendadas();
+            
+            if (!textoParaModerar.trim().isEmpty()) {
+                if (!moderationService.isTextoAprovado(textoParaModerar)) {
+                    return ApiResponse.badRequest("O conteúdo do feedback contém linguagem inadequada ou ofensiva. Por favor, revise o texto.");
+                }
             }
 
             Usuario remetente = usuarioRepository.findByKeycloakId(feedbackDTO.getKeycloakIdRemetente())

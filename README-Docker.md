@@ -20,6 +20,10 @@ O arquivo `.env` já está configurado para:
 - Keycloak local (porta 8080)
 - SendGrid configurado
 
+# Gemini API para moderação de conteúdo
+GEMINI_API_URL=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+GEMINI_API_KEY=sua_chave_api_aqui
+
 ### 2. Execução com Docker Compose (Recomendado)
 
 Para desenvolvimento local com todos os serviços:

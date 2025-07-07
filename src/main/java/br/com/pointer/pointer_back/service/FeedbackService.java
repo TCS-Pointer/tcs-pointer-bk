@@ -39,7 +39,7 @@ public class FeedbackService {
     public ApiResponse<Void> criarFeedback(FeedbackDTO feedbackDTO) {
         try {
 
-            if (feedbackDTO.getIdUsuarioRemetente().equals(feedbackDTO.getIdUsuarioDestinatario())) {
+            if (feedbackDTO.getKeycloakIdRemetente().equals(feedbackDTO.getKeycloakIdRemetente())) {
                 return ApiResponse.badRequest("O remetente não pode ser o mesmo que o destinatário, favor selecionar outro usuário");
             }
 
